@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/screens/Classificacao/classification_screen.dart';
 import 'package:flutter/material.dart';
 import '../Palpites/bet_screen.dart';
 
@@ -19,10 +20,10 @@ class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
   final List<Widget> _screens = [
-    const _HomeContent(),
+    const _HomePlaceholder(),
     const BetScreen(),
+    const ClassificationScreen(),
     const _RankingPlaceholder(),
-    const _ResultsPlaceholder(),
   ];
 
   @override
@@ -58,12 +59,12 @@ class _HomeScreenState extends State<HomeScreen> {
             label: 'Palpites',
           ),
           NavigationDestination(
-            icon: Icon(Icons.emoji_events),
-            label: 'Ranking',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.leaderboard),
             label: 'Resultados',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.emoji_events),
+            label: 'Ranking',
           ),
         ],
       ),
@@ -71,9 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-// Placeholders temporários para as outras telas
-class _HomeContent extends StatelessWidget {
-  const _HomeContent();
+class _HomePlaceholder extends StatelessWidget {
+  const _HomePlaceholder();
 
   @override
   Widget build(BuildContext context) {
@@ -89,14 +89,5 @@ class _RankingPlaceholder extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(child: Text('🏆 Ranking em breve'));
-  }
-}
-
-class _ResultsPlaceholder extends StatelessWidget {
-  const _ResultsPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('📊 Resultados em breve'));
   }
 }
