@@ -1,4 +1,6 @@
+import 'package:bolao_copa_2026/services/firebase_service.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../Palpites/bet_screen.dart';
 import '../Classificacao/classification_screen.dart';
 import '../Participantes/participantes_screen.dart';
@@ -42,7 +44,15 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        body: LoginScreen(onLoginSuccess: () => setState(() => _isLoggedIn = true)),
+        // body: LoginScreen(onLoginSuccess: () => setState(() => _isLoggedIn = true)),
+        body: LoginScreen(
+          onLoginSuccess: () {
+            setState(() {
+              _isLoggedIn = true;
+              _currentIndex = 0;
+            });
+          },
+        ),
       );
     }
 
@@ -50,6 +60,31 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Bolão Copa 2026'),
         actions: [
+          // Botão Logout
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              final confirmar = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Sair'),
+                  content: const Text('Tem certeza que deseja sair?'),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sair')),
+                  ],
+                ),
+              );
+
+              if (confirmar == true) {
+                final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+                await firebaseService.logout();
+                setState(() => _isLoggedIn = false);
+              }
+            },
+            tooltip: 'Sair',
+          ),
+          // Botão Tema
           IconButton(
             icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
             onPressed: widget.onThemeToggle,
