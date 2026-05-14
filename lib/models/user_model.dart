@@ -7,6 +7,8 @@ class UserModel {
   final int exactScores;
   final int winners;
   final DateTime? createdAt;
+  final String? whatsapp;
+  final String? pix;
 
   UserModel({
     required this.id,
@@ -17,6 +19,8 @@ class UserModel {
     this.exactScores = 0,
     this.winners = 0,
     this.createdAt,
+    this.whatsapp,
+    this.pix,
   });
 
   Map<String, dynamic> toMap() {
@@ -28,6 +32,8 @@ class UserModel {
       'exactScores': exactScores,
       'winners': winners,
       'createdAt': createdAt ?? DateTime.now(),
+      'whatsapp': whatsapp,
+      'pix': pix,
     };
   }
 
@@ -41,6 +47,8 @@ class UserModel {
       exactScores: map['exactScores'] ?? 0,
       winners: map['winners'] ?? 0,
       createdAt: map['createdAt']?.toDate(),
+      whatsapp: map['whatsapp'],
+      pix: map['pix'],
     );
   }
 }

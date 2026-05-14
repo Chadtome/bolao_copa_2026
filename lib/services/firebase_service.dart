@@ -11,11 +11,11 @@ class FirebaseService {
   // ========== AUTENTICAÇÃO ==========
 
   // Registrar novo usuário
-  Future<UserModel?> register(String name, String email, String password) async {
+  Future<UserModel?> register(String name, String email, String password, {String? whatsapp, String? pix}) async {
     try {
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
 
-      UserModel newUser = UserModel(id: userCredential.user!.uid, name: name, email: email, isAdmin: false);
+      UserModel newUser = UserModel(id: userCredential.user!.uid, name: name, email: email, isAdmin: false, whatsapp: whatsapp, pix: pix);
 
       await _firestore.collection('users').doc(userCredential.user!.uid).set(newUser.toMap());
 
@@ -83,14 +83,11 @@ class FirebaseService {
 
   // Salvar palpite
   Future<void> saveBet(BetModel bet) async {
-    // Verifica se já existe palpite desse usuário para esse jogo
     QuerySnapshot existing = await _firestore.collection('bets').where('userId', isEqualTo: bet.userId).where('gameId', isEqualTo: bet.gameId).get();
 
     if (existing.docs.isNotEmpty) {
-      // Atualiza palpite existente
       await _firestore.collection('bets').doc(existing.docs.first.id).update({'homeBet': bet.homeBet, 'awayBet': bet.awayBet});
     } else {
-      // Cria novo palpite
       await _firestore.collection('bets').add(bet.toMap());
     }
   }
@@ -135,23 +132,18 @@ class FirebaseService {
       int points = 0;
       String result = 'wrong';
 
-      // Acertou placar exato
       if (bet.homeBet == homeScore && bet.awayBet == awayScore) {
         points = 3;
         result = 'exact';
-      }
-      // Acertou vencedor ou empate
-      else if ((homeScore > awayScore && bet.homeBet > bet.awayBet) ||
+      } else if ((homeScore > awayScore && bet.homeBet > bet.awayBet) ||
           (homeScore < awayScore && bet.homeBet < bet.awayBet) ||
           (homeScore == awayScore && bet.homeBet == bet.awayBet)) {
         points = 1;
         result = 'winner';
       }
 
-      // Atualiza o palpite com a pontuação
       await _firestore.collection('bets').doc(doc.id).update({'points': points, 'result': result});
 
-      // Atualiza pontuação do usuário
       if (points > 0) {
         DocumentReference userRef = _firestore.collection('users').doc(bet.userId);
         DocumentSnapshot userDoc = await userRef.get();

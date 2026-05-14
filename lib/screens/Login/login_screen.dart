@@ -17,6 +17,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   bool _isLogin = true;
   bool _isLoading = false;
+  bool _mostrandoSnackBar = false;
 
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
@@ -88,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-      final user = await firebaseService.register(nome, email, senha);
+      final user = await firebaseService.register(nome, email, senha, whatsapp: whatsapp, pix: pix);
       if (user != null) {
         _mostrarSucesso('Cadastro realizado! Faça login para entrar.');
         setState(() => _isLogin = true);
@@ -119,11 +120,19 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _mostrarErro(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    if (_mostrandoSnackBar) return;
+    _mostrandoSnackBar = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red)).closed.then((_) => _mostrandoSnackBar = false);
   }
 
   void _mostrarSucesso(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green));
+    if (_mostrandoSnackBar) return;
+    _mostrandoSnackBar = true;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.green)).closed.then((_) => _mostrandoSnackBar = false);
   }
 
   @override
