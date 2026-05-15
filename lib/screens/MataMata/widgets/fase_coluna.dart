@@ -20,6 +20,7 @@ class FaseColuna extends StatefulWidget {
 class _FaseColunaState extends State<FaseColuna> {
   final Map<int, TextEditingController> _homeControllers = {};
   final Map<int, TextEditingController> _awayControllers = {};
+  final Map<int, bool> _penaltisDecididos = {};
 
   @override
   void dispose() {
@@ -205,6 +206,12 @@ class _FaseColunaState extends State<FaseColuna> {
     final homeController = _getHomeController(cardIndex);
     final awayController = _getAwayController(cardIndex);
 
+    bool isEmpate() {
+      final home = int.tryParse(homeController.text);
+      final away = int.tryParse(awayController.text);
+      return home != null && away != null && home == away;
+    }
+
     void salvarResultado() {
       final home = int.tryParse(homeController.text);
       final away = int.tryParse(awayController.text);
@@ -218,6 +225,20 @@ class _FaseColunaState extends State<FaseColuna> {
         }
       }
     }
+
+    void passarComPenaltis(bool timeAVenceu) {
+      if (slotA != null && slotB != null) {
+        _penaltisDecididos[cardIndex] = true;
+        if (timeAVenceu && timeA != '?') {
+          _avancarProximaFase(slotA, timeA, timeB != '?' ? timeB : '', resultados);
+        } else if (!timeAVenceu && timeB != '?') {
+          _avancarProximaFase(slotA, timeB, timeA != '?' ? timeA : '', resultados);
+        }
+        setState(() {});
+      }
+    }
+
+    final empate = isEmpate() && !(_penaltisDecididos[cardIndex] ?? false);
 
     return SizedBox(
       width: 30,
@@ -236,7 +257,12 @@ class _FaseColunaState extends State<FaseColuna> {
               onChanged: (_) => salvarResultado(),
             ),
           ),
-          const SizedBox(height: 14),
+          if (empate)
+            GestureDetector(
+              onTap: () => passarComPenaltis(true),
+              child: const Text('⚽', style: TextStyle(fontSize: 10)),
+            ),
+          SizedBox(height: empate ? 8 : 14),
           SizedBox(
             height: 18,
             child: TextField(
@@ -249,6 +275,11 @@ class _FaseColunaState extends State<FaseColuna> {
               onChanged: (_) => salvarResultado(),
             ),
           ),
+          if (empate)
+            GestureDetector(
+              onTap: () => passarComPenaltis(false),
+              child: const Text('⚽', style: TextStyle(fontSize: 10)),
+            ),
         ],
       ),
     );
