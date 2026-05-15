@@ -3,15 +3,14 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
+import 'providers/mata_mata_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/Home/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: firebaseOptions,
-  );
+  await Firebase.initializeApp(options: firebaseOptions);
 
   runApp(const MyApp());
 }
@@ -36,9 +35,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<FirebaseService>(
-          create: (_) => FirebaseService(),
-        ),
+        Provider<FirebaseService>(create: (_) => FirebaseService()),
+        ChangeNotifierProvider(create: (_) => MataMataProvider()),
       ],
       child: MaterialApp(
         title: 'Bolão Copa 2026',
@@ -46,10 +44,7 @@ class _MyAppState extends State<MyApp> {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
-        home: HomeScreen(
-          isDarkMode: _isDarkMode,
-          onThemeToggle: toggleTheme,
-        ),
+        home: HomeScreen(isDarkMode: _isDarkMode, onThemeToggle: toggleTheme),
       ),
     );
   }

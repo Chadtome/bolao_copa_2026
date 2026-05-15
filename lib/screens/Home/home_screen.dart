@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/screens/Admin/admin_mata_mata_screen.dart';
 import 'package:bolao_copa_2026/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -44,14 +45,11 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ],
         ),
-        // body: LoginScreen(onLoginSuccess: () => setState(() => _isLoggedIn = true)),
         body: LoginScreen(
-          onLoginSuccess: () {
-            setState(() {
-              _isLoggedIn = true;
-              _currentIndex = 0;
-            });
-          },
+          onLoginSuccess: () => setState(() {
+            _isLoggedIn = true;
+            _currentIndex = 0;
+          }),
         ),
       );
     }
@@ -60,35 +58,53 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Bolão Copa 2026'),
         actions: [
-          // Botão Logout
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              final confirmar = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Sair'),
-                  content: const Text('Tem certeza que deseja sair?'),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-                    ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sair')),
-                  ],
-                ),
-              );
-
-              if (confirmar == true) {
-                final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-                await firebaseService.logout();
-                setState(() => _isLoggedIn = false);
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) async {
+              if (value == 'tema') {
+                widget.onThemeToggle();
+              } else if (value == 'admin') {
+                // TODO: Abrir tela de configuração dos 16-avos
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminMataMataScreen()));
+              } else if (value == 'sair') {
+                final confirmar = await showDialog<bool>(
+                  context: context,
+                  builder: (context) => AlertDialog(
+                    title: const Text('Sair'),
+                    content: const Text('Tem certeza que deseja sair?'),
+                    actions: [
+                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
+                      ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Sair')),
+                    ],
+                  ),
+                );
+                if (confirmar == true) {
+                  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+                  await firebaseService.logout();
+                  setState(() => _isLoggedIn = false);
+                }
               }
             },
-            tooltip: 'Sair',
-          ),
-          // Botão Tema
-          IconButton(
-            icon: Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode),
-            onPressed: widget.onThemeToggle,
-            tooltip: widget.isDarkMode ? 'Modo claro' : 'Modo escuro',
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'tema',
+                child: Row(
+                  children: [
+                    Icon(widget.isDarkMode ? Icons.light_mode : Icons.dark_mode, size: 20),
+                    const SizedBox(width: 8),
+                    Text(widget.isDarkMode ? 'Modo claro' : 'Modo escuro'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'admin',
+                child: Row(children: [Icon(Icons.settings, size: 20), SizedBox(width: 8), Text('Configurar Mata-Mata')]),
+              ),
+              const PopupMenuItem(
+                value: 'sair',
+                child: Row(children: [Icon(Icons.logout, size: 20), SizedBox(width: 8), Text('Sair')]),
+              ),
+            ],
           ),
         ],
       ),

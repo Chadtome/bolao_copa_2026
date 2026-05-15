@@ -7,22 +7,128 @@ class FinalColumn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Text('FINAL', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
+        const SizedBox(height: 160),
+        Text(
+          'FINAL',
+          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
+        ),
         const SizedBox(height: 8),
-        _finalista(context, '🇧🇷', 'Brasil'),
+        _finalista(context, '⚽', '?'),
         const SizedBox(height: 8),
         const Icon(Icons.arrow_downward, color: Colors.grey, size: 20),
         Image.asset('assets/images/trofeu_copa.png', width: 100, height: 130, fit: BoxFit.contain),
         const Icon(Icons.arrow_upward, color: Colors.grey, size: 20),
         const SizedBox(height: 8),
-        _finalista(context, '🇩🇪', 'Alemanha'),
+        _finalista(context, '⚽', '?'),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: Colors.amber.shade100, borderRadius: BorderRadius.circular(6), border: Border.all(color: Colors.amber.shade300)),
-          child: Text('🏆 CAMPEÃO: A definir', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.amber.shade900)),
+          decoration: BoxDecoration(
+            color: Colors.amber.shade100,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: Colors.amber.shade300),
+          ),
+          child: Text(
+            '🏆 CAMPEÃO: A definir',
+            style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.amber.shade900),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        // Terceiro Lugar
+        Text(
+          '3º LUGAR',
+          style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.brown.shade400),
+        ),
+        const SizedBox(height: 8),
+        IntrinsicHeight(
+          child: Container(
+            width: 180,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.brown.shade200),
+            ),
+            child: Stack(
+              children: [
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text('?', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('⚽', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 24),
+                          SizedBox(
+                            width: 22,
+                            height: 18,
+                            child: TextField(
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              maxLength: 2,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              decoration: const InputDecoration(
+                                counterText: '',
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Flexible(
+                            child: Text('?', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                          ),
+                          const SizedBox(width: 6),
+                          const Text('⚽', style: TextStyle(fontSize: 14)),
+                          const SizedBox(width: 24),
+                          SizedBox(
+                            width: 22,
+                            height: 18,
+                            child: TextField(
+                              textAlign: TextAlign.center,
+                              keyboardType: TextInputType.number,
+                              maxLength: 2,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+                              decoration: const InputDecoration(
+                                counterText: '',
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Center(child: Divider(height: 1, color: Theme.of(context).dividerColor)),
+                ),
+                Positioned(top: 0, bottom: 0, right: 42, child: Container(width: 1, color: Theme.of(context).dividerColor)),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -32,7 +138,11 @@ class FinalColumn extends StatelessWidget {
     return IntrinsicHeight(
       child: Container(
         width: 180,
-        decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey.shade300),
+        ),
         child: Row(
           children: [
             Expanded(
@@ -42,7 +152,13 @@ class FinalColumn extends StatelessWidget {
                   children: [
                     Text(flag, style: const TextStyle(fontSize: 14)),
                     const SizedBox(width: 6),
-                    Flexible(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
+                    Flexible(
+                      child: Text(
+                        name,
+                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -52,9 +168,12 @@ class FinalColumn extends StatelessWidget {
               width: 30,
               child: Center(
                 child: SizedBox(
-                  width: 22, height: 18,
+                  width: 22,
+                  height: 18,
                   child: TextField(
-                    textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    maxLength: 2,
                     style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
                     decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
                   ),
