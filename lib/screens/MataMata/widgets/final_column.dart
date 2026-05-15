@@ -1,11 +1,20 @@
+import 'package:bolao_copa_2026/data/teams.dart';
+import 'package:bolao_copa_2026/providers/resultados_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 
 class FinalColumn extends StatelessWidget {
   const FinalColumn({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final resultados = Provider.of<ResultadosProvider>(context);
+    final finalistaCima = resultados.getTime(63);
+    final finalistaBaixo = resultados.getTime(64);
+    final terceiroCima = resultados.getTime(61);
+    final terceiroBaixo = resultados.getTime(62);
+
     return Column(
       mainAxisAlignment: MainAxisAlignment.start,
       children: [
@@ -15,13 +24,13 @@ class FinalColumn extends StatelessWidget {
           style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
         ),
         const SizedBox(height: 8),
-        _finalista(context, '⚽', '?'),
+        _finalista(context, finalistaCima),
         const SizedBox(height: 8),
         const Icon(Icons.arrow_downward, color: Colors.grey, size: 20),
         Image.asset('assets/images/trofeu_copa.png', width: 100, height: 130, fit: BoxFit.contain),
         const Icon(Icons.arrow_upward, color: Colors.grey, size: 20),
         const SizedBox(height: 8),
-        _finalista(context, '⚽', '?'),
+        _finalista(context, finalistaBaixo),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -62,10 +71,14 @@ class FinalColumn extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Flexible(
-                            child: Text('?', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                            child: Text(
+                              terceiroCima ?? '?',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          const Text('⚽', style: TextStyle(fontSize: 14)),
+                          Text(terceiroCima != null ? Teams.get(terceiroCima).flag : '⚽', style: const TextStyle(fontSize: 14)),
                           const SizedBox(width: 24),
                           SizedBox(
                             width: 22,
@@ -92,10 +105,14 @@ class FinalColumn extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Flexible(
-                            child: Text('?', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+                            child: Text(
+                              terceiroBaixo ?? '?',
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                           const SizedBox(width: 6),
-                          const Text('⚽', style: TextStyle(fontSize: 14)),
+                          Text(terceiroBaixo != null ? Teams.get(terceiroBaixo).flag : '⚽', style: const TextStyle(fontSize: 14)),
                           const SizedBox(width: 24),
                           SizedBox(
                             width: 22,
@@ -134,7 +151,10 @@ class FinalColumn extends StatelessWidget {
     );
   }
 
-  Widget _finalista(BuildContext context, String flag, String name) {
+  Widget _finalista(BuildContext context, String? nome) {
+    final flag = nome != null ? Teams.get(nome).flag : '⚽';
+    final name = nome ?? '?';
+
     return IntrinsicHeight(
       child: Container(
         width: 180,

@@ -1,14 +1,88 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../data/teams.dart';
+import '../../../providers/resultados_provider.dart';
 
-class FaseColuna extends StatelessWidget {
+class FaseColuna extends StatefulWidget {
   final String titulo;
   final int jogos;
   final bool invertido;
   final List<Map<String, String?>>? confrontos;
+  final int? startSlot;
 
-  const FaseColuna({super.key, required this.titulo, required this.jogos, this.invertido = false, this.confrontos});
+  const FaseColuna({super.key, required this.titulo, required this.jogos, this.invertido = false, this.confrontos, this.startSlot});
+
+  @override
+  State<FaseColuna> createState() => _FaseColunaState();
+}
+
+class _FaseColunaState extends State<FaseColuna> {
+  final Map<int, TextEditingController> _homeControllers = {};
+  final Map<int, TextEditingController> _awayControllers = {};
+
+  @override
+  void dispose() {
+    for (var c in _homeControllers.values) {
+      c.dispose();
+    }
+    for (var c in _awayControllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  TextEditingController _getHomeController(int index) {
+    if (!_homeControllers.containsKey(index)) {
+      _homeControllers[index] = TextEditingController();
+    }
+    return _homeControllers[index]!;
+  }
+
+  TextEditingController _getAwayController(int index) {
+    if (!_awayControllers.containsKey(index)) {
+      _awayControllers[index] = TextEditingController();
+    }
+    return _awayControllers[index]!;
+  }
+
+  void _avancarProximaFase(int slot, String vencedor, String perdedor, ResultadosProvider resultados) {
+    int slotVencedor;
+    int slotPerdedor = 0;
+
+    if (slot <= 16) {
+      slotVencedor = 33 + ((slot - 1) ~/ 2);
+    } else if (slot <= 32) {
+      slotVencedor = 41 + ((slot - 17) ~/ 2);
+    } else if (slot <= 40) {
+      slotVencedor = 49 + ((slot - 33) ~/ 2);
+    } else if (slot <= 48) {
+      slotVencedor = 53 + ((slot - 41) ~/ 2);
+    } else if (slot <= 52) {
+      slotVencedor = 57 + ((slot - 49) ~/ 2);
+    } else if (slot <= 56) {
+      slotVencedor = 59 + ((slot - 53) ~/ 2);
+    } else if (slot == 57) {
+      slotVencedor = 63;
+      slotPerdedor = 62;
+    } else if (slot == 58) {
+      slotVencedor = 63;
+      slotPerdedor = 62;
+    } else if (slot == 59) {
+      slotVencedor = 64;
+      slotPerdedor = 61;
+    } else if (slot == 60) {
+      slotVencedor = 64;
+      slotPerdedor = 61;
+    } else {
+      return;
+    }
+
+    resultados.setAvancou(slotVencedor, vencedor);
+    if (slotPerdedor > 0 && perdedor.isNotEmpty) {
+      resultados.setAvancou(slotPerdedor, perdedor);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,23 +90,25 @@ class FaseColuna extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Text(
-          titulo,
+          widget.titulo,
           style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
         ),
         const SizedBox(height: 8),
-        ...List.generate(jogos, (index) => _buildCard(context, index)),
+        ...List.generate(widget.jogos, (index) => _buildCard(context, index)),
       ],
     );
   }
 
   Widget _buildCard(BuildContext context, int index) {
+    final resultados = Provider.of<ResultadosProvider>(context);
+
     String timeA = '?';
     String timeB = '?';
     String flagA = '⚽';
     String flagB = '⚽';
 
-    if (confrontos != null && index < confrontos!.length) {
-      final c = confrontos![index];
+    if (widget.confrontos != null && index < widget.confrontos!.length) {
+      final c = widget.confrontos![index];
       if (c['timeA'] != null) {
         timeA = c['timeA']!;
         flagA = Teams.get(timeA).flag;
@@ -55,16 +131,16 @@ class FaseColuna extends StatelessWidget {
         child: Stack(
           children: [
             Row(
-              children: invertido
+              children: widget.invertido
                   ? [
-                      _buildCampos(context),
+                      _buildCampos(context, index, resultados, timeA, timeB),
                       Container(width: 1, color: Theme.of(context).dividerColor),
                       _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: true),
                     ]
                   : [
                       _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: false),
                       Container(width: 1, color: Theme.of(context).dividerColor),
-                      _buildCampos(context),
+                      _buildCampos(context, index, resultados, timeA, timeB),
                     ],
             ),
             Positioned(
@@ -122,22 +198,58 @@ class FaseColuna extends StatelessWidget {
     );
   }
 
-  Widget _buildCampos(BuildContext context) {
+  Widget _buildCampos(BuildContext context, int cardIndex, ResultadosProvider resultados, String timeA, String timeB) {
+    final slotA = widget.startSlot != null ? widget.startSlot! + cardIndex * 2 : null;
+    final slotB = widget.startSlot != null ? widget.startSlot! + cardIndex * 2 + 1 : null;
+
+    final homeController = _getHomeController(cardIndex);
+    final awayController = _getAwayController(cardIndex);
+
+    void salvarResultado() {
+      final home = int.tryParse(homeController.text);
+      final away = int.tryParse(awayController.text);
+      if (home != null && away != null && slotA != null && slotB != null) {
+        resultados.setResultado(slotA, slotB, home, away);
+
+        if (home > away) {
+          if (timeA != '?') _avancarProximaFase(slotA, timeA, timeB != '?' ? timeB : '', resultados);
+        } else if (away > home) {
+          if (timeB != '?') _avancarProximaFase(slotA, timeB, timeA != '?' ? timeA : '', resultados);
+        }
+      }
+    }
+
     return SizedBox(
       width: 30,
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [_campo(), const SizedBox(height: 14), _campo()]),
-    );
-  }
-
-  Widget _campo() {
-    return SizedBox(
-      height: 18,
-      child: TextField(
-        textAlign: TextAlign.center,
-        keyboardType: TextInputType.number,
-        maxLength: 2,
-        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-        decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: 18,
+            child: TextField(
+              controller: homeController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              maxLength: 2,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
+              onChanged: (_) => salvarResultado(),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            height: 18,
+            child: TextField(
+              controller: awayController,
+              textAlign: TextAlign.center,
+              keyboardType: TextInputType.number,
+              maxLength: 2,
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
+              onChanged: (_) => salvarResultado(),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/providers/resultados_provider.dart';
 import 'package:bolao_copa_2026/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -39,6 +40,7 @@ class _MyAppState extends State<MyApp> {
         Provider<FirebaseService>(create: (_) => FirebaseService()),
         ChangeNotifierProvider(create: (_) => MataMataProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => ResultadosProvider()),
       ],
       child: MaterialApp(
         title: 'Bolão Copa 2026',
