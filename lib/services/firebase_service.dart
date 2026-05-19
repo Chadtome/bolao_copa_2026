@@ -167,4 +167,13 @@ class FirebaseService {
   Future<void> resetPassword(String email) async {
     await _auth.sendPasswordResetEmail(email: email);
   }
+
+  // Buscar todos os usuários (Stream)
+Stream<QuerySnapshot> getUsersStream() {
+  return _firestore
+    .collection('users')
+    .where('isAdmin', isEqualTo: false)
+    .orderBy('totalPoints', descending: true)
+    .snapshots();
+}
 }
