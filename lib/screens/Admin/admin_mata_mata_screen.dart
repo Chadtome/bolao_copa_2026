@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../data/classified_teams.dart';
 import '../../data/teams.dart';
 import '../../providers/mata_mata_provider.dart';
+import '../../providers/resultados_provider.dart';
 
 class AdminMataMataScreen extends StatefulWidget {
   const AdminMataMataScreen({super.key});
@@ -16,6 +17,7 @@ class _AdminMataMataScreenState extends State<AdminMataMataScreen> {
   @override
   Widget build(BuildContext context) {
     final provider = Provider.of<MataMataProvider>(context);
+    final resultados = Provider.of<ResultadosProvider>(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -26,10 +28,7 @@ class _AdminMataMataScreenState extends State<AdminMataMataScreen> {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Confrontos salvos!'), backgroundColor: Colors.green));
               Navigator.pop(context);
             },
-            child: const Text(
-              'SALVAR',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
-            ),
+            child: const Text('SALVAR', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -42,35 +41,30 @@ class _AdminMataMataScreenState extends State<AdminMataMataScreen> {
           const SizedBox(height: 16),
           ...List.generate(32, (index) {
             final slot = index + 1;
-            return _buildSlotCard(slot, provider);
+            return _buildSlotCard(slot, provider, resultados);
           }),
         ],
       ),
     );
   }
 
-  Widget _buildSlotCard(int slot, MataMataProvider provider) {
+  Widget _buildSlotCard(int slot, MataMataProvider provider, ResultadosProvider resultados) {
     final selected = provider.slots[slot];
-    final all = _getAvailableTimes(slot, provider);
+    final all = _getAvailableTimes(slot, provider, resultados);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
-          child: Text(
-            '$slot',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
-          ),
+          child: Text('$slot', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600)),
         ),
         title: selected != null
             ? Row(
                 children: [
                   Text(Teams.get(selected).flag, style: const TextStyle(fontSize: 18)),
                   const SizedBox(width: 8),
-                  Flexible(
-                    child: Text(selected, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
-                  ),
+                  Flexible(child: Text(selected, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500))),
                 ],
               )
             : const Text('Selecionar time', style: TextStyle(color: Colors.grey)),
@@ -97,8 +91,8 @@ class _AdminMataMataScreenState extends State<AdminMataMataScreen> {
     );
   }
 
-  List<String> _getAvailableTimes(int slot, MataMataProvider provider) {
-    final all = [...ClassifiedTeams.getFirstPlaces(), ...ClassifiedTeams.getSecondPlaces(), ...ClassifiedTeams.getBestThirds()];
+  List<String> _getAvailableTimes(int slot, MataMataProvider provider, ResultadosProvider resultados) {
+    final all = ClassifiedTeams.getAllClassified(resultados);
 
     final used = <String>{};
     provider.slots.forEach((s, time) {

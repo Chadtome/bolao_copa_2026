@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
 import '../../../data/group_phase_games.dart';
+import '../../../providers/resultados_provider.dart';
+import '../../../services/group_classifier.dart';
 import 'tbl_cell.dart';
 
 class BestThirdsTable extends StatelessWidget {
@@ -8,7 +11,10 @@ class BestThirdsTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final thirds = _getAllThirdTeams();
+    final resultados = Provider.of<ResultadosProvider>(context);
+
+    // Pega os 3º colocados de cada grupo com seus dados
+    final thirdsData = _getAllThirdsData(resultados);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -95,7 +101,7 @@ class BestThirdsTable extends StatelessWidget {
                                     : null,
                                 children: [
                                   TblCell(
-                                    '${i + 1}º  ${thirds[i]}',
+                                    '${i + 1}º  ${thirdsData[i]['time']}',
                                     ellipsis: !isWide,
                                     align: TextAlign.start,
                                     padding: const EdgeInsets.only(left: 8),
@@ -105,14 +111,14 @@ class BestThirdsTable extends StatelessWidget {
                                       color: i < 8 ? Colors.green.shade700 : Colors.grey,
                                     ),
                                   ),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
-                                  const TblCell('0', style: TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['P']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['J']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['V']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['E']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['D']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['GP']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['GC']}', style: const TextStyle(fontSize: 16)),
+                                  TblCell('${thirdsData[i]['SG']}', style: const TextStyle(fontSize: 16)),
                                 ],
                               ),
                           ],
@@ -122,18 +128,12 @@ class BestThirdsTable extends StatelessWidget {
                       Row(
                         children: [
                           Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: Colors.green.shade700,
-                              borderRadius: BorderRadius.circular(2),
-                            ),
+                            width: 12, height: 12,
+                            decoration: BoxDecoration(color: Colors.green.shade700, borderRadius: BorderRadius.circular(2)),
                           ),
                           const SizedBox(width: 6),
-                          Text(
-                            'Classificados (8 primeiros)',
-                            style: GoogleFonts.inter(fontSize: 11, color: Colors.green.shade700),
-                          ),
+                          Text('Classificados (8 primeiros)',
+                              style: GoogleFonts.inter(fontSize: 11, color: Colors.green.shade700)),
                         ],
                       ),
                     ],
@@ -147,18 +147,63 @@ class BestThirdsTable extends StatelessWidget {
     );
   }
 
-  static List<String> _getAllThirdTeams() {
-    final thirds = <String>[];
+  static List<Map<String, dynamic>> _getAllThirdsData(ResultadosProvider resultados) {
+    final allThirds = <Map<String, dynamic>>[];
+
     for (int i = 0; i < 12; i++) {
       final group = GroupPhaseGames.groups[i];
       final games = group['games'] as List;
-      final teams = <String>[];
+
+      // Constrói mapa de resultados para o classificador
+      final resultadosMap = <String, Map<String, dynamic>>{};
       for (var game in games) {
-        if (!teams.contains(game['homeTeam'])) teams.add(game['homeTeam']);
-        if (!teams.contains(game['awayTeam'])) teams.add(game['awayTeam']);
+        final r = resultados.getResultadoGrupo(game['homeTeam'], game['awayTeam']);
+        if (r != null) {
+          resultadosMap['${game['homeTeam']}_${game['awayTeam']}'] = r;
+        }
       }
-      thirds.add(teams[2]);
+
+      final classifier = GroupClassifier(resultadosMap);
+      final teams = classifier.classificar(i);
+      final thirdTeam = teams[2]; // 3º colocado
+
+      // Calcula dados do time
+      int pontos = 0, jogos = 0, vitorias = 0, empates = 0, derrotas = 0, gp = 0, gc = 0;
+
+      for (var game in games) {
+        final r = resultados.getResultadoGrupo(game['homeTeam'], game['awayTeam']);
+        if (r == null) continue;
+
+        final home = (r['home'] as num).toInt();
+        final away = (r['away'] as num).toInt();
+
+        if (game['homeTeam'] == thirdTeam) {
+          jogos++; gp += home; gc += away;
+          if (home > away) { pontos += 3; vitorias++; }
+          else if (home == away) { pontos += 1; empates++; }
+          else derrotas++;
+        } else if (game['awayTeam'] == thirdTeam) {
+          jogos++; gp += away; gc += home;
+          if (away > home) { pontos += 3; vitorias++; }
+          else if (home == away) { pontos += 1; empates++; }
+          else derrotas++;
+        }
+      }
+
+      allThirds.add({
+        'time': thirdTeam,
+        'P': pontos, 'J': jogos, 'V': vitorias, 'E': empates, 'D': derrotas,
+        'GP': gp, 'GC': gc, 'SG': gp - gc,
+      });
     }
-    return thirds;
+
+    // Ordena por pontos, saldo, gols marcados
+    allThirds.sort((a, b) {
+      if (a['P'] != b['P']) return (b['P'] as int).compareTo(a['P'] as int);
+      if (a['SG'] != b['SG']) return (b['SG'] as int).compareTo(a['SG'] as int);
+      return (b['GP'] as int).compareTo(a['GP'] as int);
+    });
+
+    return allThirds;
   }
 }

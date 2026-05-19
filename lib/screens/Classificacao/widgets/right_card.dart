@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../data/group_phase_games.dart';
+import '../../../providers/resultados_provider.dart';
 import 'jogo_resultado.dart';
 
-class RightCard extends StatelessWidget {
+class RightCard extends StatefulWidget {
   final int grupoIndex;
   final int rodada;
   final bool isMobile;
@@ -19,26 +21,71 @@ class RightCard extends StatelessWidget {
   });
 
   @override
+  State<RightCard> createState() => _RightCardState();
+}
+
+class _RightCardState extends State<RightCard> {
+  // Controladores por jogo (índice do jogo no grupo: 0-5)
+  final Map<int, TextEditingController> _homeControllers = {};
+  final Map<int, TextEditingController> _awayControllers = {};
+
+  @override
+  void dispose() {
+    for (var c in _homeControllers.values) { c.dispose(); }
+    for (var c in _awayControllers.values) { c.dispose(); }
+    super.dispose();
+  }
+
+  TextEditingController _getHomeController(int gameIndex) {
+    if (!_homeControllers.containsKey(gameIndex)) {
+      _homeControllers[gameIndex] = TextEditingController();
+      // Carrega valor salvo
+      final group = GroupPhaseGames.groups[widget.grupoIndex];
+      final games = group['games'] as List;
+      final game = games[gameIndex];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+        final saved = resultados.getResultadoGrupo(game['homeTeam'], game['awayTeam']);
+        if (saved != null) {
+          _homeControllers[gameIndex]!.text = '${saved['home']}';
+        }
+      });
+    }
+    return _homeControllers[gameIndex]!;
+  }
+
+  TextEditingController _getAwayController(int gameIndex) {
+    if (!_awayControllers.containsKey(gameIndex)) {
+      _awayControllers[gameIndex] = TextEditingController();
+      final group = GroupPhaseGames.groups[widget.grupoIndex];
+      final games = group['games'] as List;
+      final game = games[gameIndex];
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+        final saved = resultados.getResultadoGrupo(game['homeTeam'], game['awayTeam']);
+        if (saved != null) {
+          _awayControllers[gameIndex]!.text = '${saved['away']}';
+        }
+      });
+    }
+    return _awayControllers[gameIndex]!;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final group = GroupPhaseGames.groups[grupoIndex];
+    final group = GroupPhaseGames.groups[widget.grupoIndex];
     final games = group['games'] as List;
-    final startIndex = (rodada - 1) * 2;
+    final startIndex = (widget.rodada - 1) * 2;
 
     return Column(
       children: [
-        if (!isMobile) const SizedBox(height: 38),
+        if (!widget.isMobile) const SizedBox(height: 38),
         Container(
           height: 250,
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.1),
-                blurRadius: 4,
-                offset: const Offset(0, 2),
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 4, offset: const Offset(0, 2))],
           ),
           child: Column(
             children: [
@@ -48,27 +95,18 @@ class RightCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      icon: Icon(
-                        Icons.chevron_left,
-                        size: 28,
-                        color: rodada > 1 ? Theme.of(context).colorScheme.primary : Colors.grey,
-                      ),
-                      onPressed: onRodadaAnterior,
+                      icon: Icon(Icons.chevron_left, size: 28,
+                          color: widget.rodada > 1 ? Theme.of(context).colorScheme.primary : Colors.grey),
+                      onPressed: widget.onRodadaAnterior,
                     ),
                     Expanded(
-                      child: Text(
-                        '$rodadaº RODADA',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                      ),
+                      child: Text('${widget.rodada}º RODADA', textAlign: TextAlign.center,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
                     ),
                     IconButton(
-                      icon: Icon(
-                        Icons.chevron_right,
-                        size: 28,
-                        color: rodada < 3 ? Theme.of(context).colorScheme.primary : Colors.grey,
-                      ),
-                      onPressed: onProximaRodada,
+                      icon: Icon(Icons.chevron_right, size: 28,
+                          color: widget.rodada < 3 ? Theme.of(context).colorScheme.primary : Colors.grey),
+                      onPressed: widget.onProximaRodada,
                     ),
                   ],
                 ),
@@ -77,23 +115,9 @@ class RightCard extends StatelessWidget {
               Expanded(
                 child: Column(
                   children: [
-                    JogoResultado(
-                      home: games[startIndex]['homeTeam'],
-                      away: games[startIndex]['awayTeam'],
-                      homeFlag: games[startIndex]['homeFlag'],
-                      awayFlag: games[startIndex]['awayFlag'],
-                      date: games[startIndex]['date'],
-                      time: games[startIndex]['time'],
-                    ),
+                    _buildJogo(startIndex),
                     Divider(height: 1, color: Theme.of(context).dividerColor),
-                    JogoResultado(
-                      home: games[startIndex + 1]['homeTeam'],
-                      away: games[startIndex + 1]['awayTeam'],
-                      homeFlag: games[startIndex + 1]['homeFlag'],
-                      awayFlag: games[startIndex + 1]['awayFlag'],
-                      date: games[startIndex + 1]['date'],
-                      time: games[startIndex + 1]['time'],
-                    ),
+                    _buildJogo(startIndex + 1),
                   ],
                 ),
               ),
@@ -101,6 +125,89 @@ class RightCard extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildJogo(int gameIndex) {
+    final group = GroupPhaseGames.groups[widget.grupoIndex];
+    final games = group['games'] as List;
+    final game = games[gameIndex];
+    final resultados = Provider.of<ResultadosProvider>(context);
+
+    final homeCtrl = _getHomeController(gameIndex);
+    final awayCtrl = _getAwayController(gameIndex);
+
+    void salvar() {
+      final home = int.tryParse(homeCtrl.text);
+      final away = int.tryParse(awayCtrl.text);
+      if (home != null && away != null) {
+        resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
+      }
+    }
+
+    return Expanded(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text('${game['date']} - ${game['time']}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
+          ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Flexible(child: Text(game['homeTeam'], style: const TextStyle(fontSize: 20), overflow: TextOverflow.ellipsis)),
+                        const SizedBox(width: 6),
+                        Text(game['homeFlag'], style: const TextStyle(fontSize: 20)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  _campo(homeCtrl, salvar),
+                  const SizedBox(width: 6),
+                  const Text('x', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+                  const SizedBox(width: 6),
+                  _campo(awayCtrl, salvar),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(game['awayFlag'], style: const TextStyle(fontSize: 20)),
+                        const SizedBox(width: 6),
+                        Flexible(child: Text(game['awayTeam'], style: const TextStyle(fontSize: 20), overflow: TextOverflow.ellipsis)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _campo(TextEditingController controller, VoidCallback onSalvar) {
+    return SizedBox(
+      width: 30,
+      height: 28,
+      child: TextField(
+        controller: controller,
+        textAlign: TextAlign.center,
+        keyboardType: TextInputType.number,
+        maxLength: 2,
+        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero,
+            filled: true, fillColor: Colors.transparent, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+        onChanged: (_) => onSalvar(),
+      ),
     );
   }
 }

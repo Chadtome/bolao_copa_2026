@@ -1,20 +1,10 @@
 import 'package:flutter/material.dart';
 
-class PlacarField extends StatefulWidget {
-  const PlacarField({super.key});
+class PlacarField extends StatelessWidget {
+  final TextEditingController controller;
+  final Function(String)? onChanged;
 
-  @override
-  State<PlacarField> createState() => _PlacarFieldState();
-}
-
-class _PlacarFieldState extends State<PlacarField> {
-  final _controller = TextEditingController();
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  const PlacarField({super.key, required this.controller, this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -22,21 +12,13 @@ class _PlacarFieldState extends State<PlacarField> {
       width: 30,
       height: 28,
       child: TextField(
-        controller: _controller,
+        controller: controller,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 2,
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-        decoration: const InputDecoration(
-          counterText: '',
-          isDense: true,
-          contentPadding: EdgeInsets.zero,
-          filled: true,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-        ),
+        decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, filled: true, fillColor: Colors.transparent, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
+        onChanged: onChanged,
       ),
     );
   }
