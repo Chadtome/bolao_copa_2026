@@ -83,10 +83,15 @@ class ParticipanteList extends StatelessWidget {
                               ],
                             ),
                             onTap: () {
+                              final userId = users[index].id;
                               showDialog(
-                                context: context,
-                                builder: (_) => PalpitesModal(nome: nome),
-                              );
+                                context: context, 
+                                builder: (_) => PalpitesModal(nome: nome, userId: userId)
+                                );
+                              // showDialog(
+                              //   context: context,
+                              //   builder: (_) => PalpitesModal(nome: nome),
+                              // );
                             },
                           );
                         },

@@ -24,18 +24,27 @@ class _FaseColunaState extends State<FaseColuna> {
 
   @override
   void dispose() {
-    for (var c in _homeControllers.values) {
-      c.dispose();
-    }
-    for (var c in _awayControllers.values) {
-      c.dispose();
-    }
+    for (var c in _homeControllers.values) { c.dispose(); }
+    for (var c in _awayControllers.values) { c.dispose(); }
     super.dispose();
   }
 
   TextEditingController _getHomeController(int index) {
     if (!_homeControllers.containsKey(index)) {
       _homeControllers[index] = TextEditingController();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
+        final slotB = slotA != null ? slotA + 1 : null;
+        if (slotA != null && slotB != null) {
+          try {
+            final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+            final r = resultados.getResultado(slotA, slotB);
+            if (r != null && mounted) {
+              _homeControllers[index]!.text = '${r['home']}';
+            }
+          } catch (_) {}
+        }
+      });
     }
     return _homeControllers[index]!;
   }
@@ -43,6 +52,19 @@ class _FaseColunaState extends State<FaseColuna> {
   TextEditingController _getAwayController(int index) {
     if (!_awayControllers.containsKey(index)) {
       _awayControllers[index] = TextEditingController();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
+        final slotB = slotA != null ? slotA + 1 : null;
+        if (slotA != null && slotB != null) {
+          try {
+            final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+            final r = resultados.getResultado(slotA, slotB);
+            if (r != null && mounted) {
+              _awayControllers[index]!.text = '${r['away']}';
+            }
+          } catch (_) {}
+        }
+      });
     }
     return _awayControllers[index]!;
   }
@@ -90,10 +112,7 @@ class _FaseColunaState extends State<FaseColuna> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          widget.titulo,
-          style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey),
-        ),
+        Text(widget.titulo, style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
         const SizedBox(height: 8),
         ...List.generate(widget.jogos, (index) => _buildCard(context, index)),
       ],
@@ -145,10 +164,7 @@ class _FaseColunaState extends State<FaseColuna> {
                     ],
             ),
             Positioned(
-              top: 0,
-              bottom: 0,
-              left: 0,
-              right: 0,
+              top: 0, bottom: 0, left: 0, right: 0,
               child: Center(child: Divider(height: 1, color: Theme.of(context).dividerColor)),
             ),
           ],
@@ -173,28 +189,8 @@ class _FaseColunaState extends State<FaseColuna> {
         mainAxisAlignment: alinharEsquerda ? MainAxisAlignment.start : MainAxisAlignment.end,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: alinharEsquerda
-            ? [
-                Text(flag, style: const TextStyle(fontSize: 14)),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(
-                    name,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ]
-            : [
-                Flexible(
-                  child: Text(
-                    name,
-                    style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(flag, style: const TextStyle(fontSize: 14)),
-              ],
+            ? [Text(flag, style: const TextStyle(fontSize: 14)), const SizedBox(width: 6), Flexible(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis))]
+            : [Flexible(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)), const SizedBox(width: 6), Text(flag, style: const TextStyle(fontSize: 14))],
       ),
     );
   }
