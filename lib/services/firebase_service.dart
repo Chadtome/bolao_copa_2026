@@ -82,16 +82,38 @@ class FirebaseService {
   // ========== PALPITES ==========
 
   // Salvar palpite
-  Future<void> saveBet(BetModel bet) async {
-    QuerySnapshot existing = await _firestore.collection('bets').where('userId', isEqualTo: bet.userId).where('gameId', isEqualTo: bet.gameId).get();
+  Future<void> saveBet({
+  required String userId,
+  required String gameId,
+  required int homeBet,
+  required int awayBet,
+}) async {
+  // Verifica se já existe palpite
+  QuerySnapshot existing = await _firestore
+      .collection('bets')
+      .where('userId', isEqualTo: userId)
+      .where('gameId', isEqualTo: gameId)
+      .get();
 
-    if (existing.docs.isNotEmpty) {
-      await _firestore.collection('bets').doc(existing.docs.first.id).update({'homeBet': bet.homeBet, 'awayBet': bet.awayBet});
-    } else {
-      await _firestore.collection('bets').add(bet.toMap());
-    }
+  if (existing.docs.isNotEmpty) {
+    // Atualiza
+    await _firestore.collection('bets').doc(existing.docs.first.id).update({
+      'homeBet': homeBet,
+      'awayBet': awayBet,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  } else {
+    // Cria novo
+    await _firestore.collection('bets').add({
+      'userId': userId,
+      'gameId': gameId,
+      'homeBet': homeBet,
+      'awayBet': awayBet,
+      'points': 0,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
   }
-
+}
   // Buscar palpites do usuário
   Stream<List<BetModel>> getUserBets(String userId) {
     return _firestore.collection('bets').where('userId', isEqualTo: userId).snapshots().map((snapshot) {
@@ -175,5 +197,35 @@ Stream<QuerySnapshot> getUsersStream() {
     .where('isAdmin', isEqualTo: false)
     .orderBy('totalPoints', descending: true)
     .snapshots();
+}
+
+// Buscar palpites do usuário por gameId (Stream)
+Stream<QuerySnapshot> getUserBetsStream(String userId) {
+  return _firestore
+      .collection('bets')
+      .where('userId', isEqualTo: userId)
+      .snapshots();
+}
+
+// Buscar lista de palpites do usuário
+Future<List<Map<String, dynamic>>?> getUserBetsList(String userId) async {
+  try {
+    final snapshot = await _firestore
+        .collection('bets')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    return snapshot.docs.map((doc) {
+      final data = doc.data();
+      return {
+        'gameId': data['gameId'] ?? '',
+        'homeBet': data['homeBet'] ?? 0,
+        'awayBet': data['awayBet'] ?? 0,
+      };
+    }).toList();
+  } catch (e) {
+    print('Erro ao buscar palpites: $e');
+    return null;
+  }
 }
 }

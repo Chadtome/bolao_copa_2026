@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/group_phase_games.dart';
 import '../../../providers/resultados_provider.dart';
-import 'jogo_resultado.dart';
+
 
 class RightCard extends StatefulWidget {
   final int grupoIndex;

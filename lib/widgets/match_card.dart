@@ -15,7 +15,8 @@ class MatchCard extends StatelessWidget {
   final String? time;
   final String status;
   final bool isEditable;
-  final Function(int home, int away)? onBetChanged;
+  final String? gameId; // NOVO
+  final Function(String gameId, int home, int away)? onBetChanged; // ALTERADO
 
   const MatchCard({
     super.key,
@@ -31,6 +32,7 @@ class MatchCard extends StatelessWidget {
     this.time,
     this.status = 'open',
     this.isEditable = false,
+    this.gameId,
     this.onBetChanged,
   });
 
@@ -42,61 +44,28 @@ class MatchCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(
           children: [
-            // Data
             SizedBox(
               width: 42,
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    date ?? '',
-                    style: GoogleFonts.inter(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  Text(
-                    time ?? '',
-                    style: GoogleFonts.inter(fontSize: 9, color: Colors.grey),
-                  ),
+                  Text(date ?? '', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+                  Text(time ?? '', style: GoogleFonts.inter(fontSize: 9, color: Colors.grey)),
                 ],
               ),
             ),
-
             const SizedBox(width: 6),
-
-            // Time casa
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Flexible(
-                    child: Text(
-                      homeTeam,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                      textAlign: TextAlign.right,
-                    ),
-                  ),
+                  Flexible(child: Text(homeTeam, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis, textAlign: TextAlign.right)),
                   const SizedBox(width: 4),
-                  Tooltip(
-                    message: homeTeam,
-                    child: Text(
-                      homeFlag ?? '⚽',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
+                  Tooltip(message: homeTeam, child: Text(homeFlag ?? '⚽', style: const TextStyle(fontSize: 18))),
                 ],
               ),
             ),
-
             const SizedBox(width: 8),
-
-            // Placar
             SizedBox(
               width: 72,
               child: ScoreSection(
@@ -106,35 +75,21 @@ class MatchCard extends StatelessWidget {
                 awayBet: awayBet,
                 status: status,
                 isEditable: isEditable,
-                onChanged: onBetChanged,
+                onChanged: (home, away) {
+                  if (gameId != null && onBetChanged != null) {
+                    onBetChanged!(gameId!, home, away);
+                  }
+                },
               ),
             ),
-
             const SizedBox(width: 8),
-
-            // Time visitante
             Expanded(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.start,
                 children: [
-                  Tooltip(
-                    message: awayTeam,
-                    child: Text(
-                      awayFlag ?? '⚽',
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
+                  Tooltip(message: awayTeam, child: Text(awayFlag ?? '⚽', style: const TextStyle(fontSize: 18))),
                   const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      awayTeam,
-                      style: GoogleFonts.poppins(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
+                  Flexible(child: Text(awayTeam, style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
                 ],
               ),
             ),

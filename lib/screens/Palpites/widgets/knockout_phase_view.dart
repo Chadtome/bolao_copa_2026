@@ -7,7 +7,21 @@ import '../../../widgets/match_card.dart';
 
 class KnockoutPhaseView extends StatelessWidget {
   final int currentPhase;
-  const KnockoutPhaseView({super.key, required this.currentPhase});
+  final Function(String, int, int)? onPalpiteChanged;
+  final Map<String, Map<String, int>> palpites;
+
+  const KnockoutPhaseView({super.key, required this.currentPhase, this.onPalpiteChanged, this.palpites = const {}});
+
+  String _gameId(int index) {
+    switch (currentPhase) {
+      case 1: return '16avos_${index + 1}';
+      case 2: return 'oitavas_${index + 1}';
+      case 3: return 'quartas_${index + 1}';
+      case 4: return 'semi_${index + 1}';
+      case 5: return index == 0 ? 'final' : 'terceiro';
+      default: return '';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,8 +45,10 @@ class KnockoutPhaseView extends StatelessWidget {
         final j = jogos[index];
         final timeA = j['timeA'] ?? '?';
         final timeB = j['timeB'] ?? '?';
+        final gameId = _gameId(index);
 
         return MatchCard(
+          key: ValueKey(gameId),
           homeTeam: timeA,
           awayTeam: timeB,
           homeFlag: timeA != '?' ? Teams.get(timeA).flag : '⚽',
@@ -41,9 +57,10 @@ class KnockoutPhaseView extends StatelessWidget {
           time: '',
           status: 'open',
           isEditable: true,
-          onBetChanged: (home, away) {
-            debugPrint('Palpite: $timeA $home x $away $timeB');
-          },
+          gameId: gameId,
+          homeBet: palpites[gameId]?['home'],
+          awayBet: palpites[gameId]?['away'],
+          onBetChanged: onPalpiteChanged,
         );
       },
     );

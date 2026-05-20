@@ -4,7 +4,10 @@ import '../../../widgets/match_card.dart';
 
 class GroupPanel extends StatelessWidget {
   final Map<String, dynamic> group;
-  const GroupPanel({super.key, required this.group});
+  final Function(String, int, int)? onPalpiteChanged;
+  final Map<String, Map<String, int>> palpites;
+
+  const GroupPanel({super.key, required this.group, this.onPalpiteChanged, this.palpites = const {}});
 
   @override
   Widget build(BuildContext context) {
@@ -23,23 +26,29 @@ class GroupPanel extends StatelessWidget {
             child: Text('Grupo ${group['name']}',
                 style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
           ),
-          ...List<Widget>.from((group['games'] as List).map((game) => MatchCard(
-                homeTeam: game['homeTeam'],
-                awayTeam: game['awayTeam'],
-                homeFlag: game['homeFlag'],
-                awayFlag: game['awayFlag'],
-                date: game['date'],
-                time: game['time'],
-                status: game['status'] ?? 'open',
-                isEditable: game['status'] == 'open',
-                homeBet: game['homeBet'],
-                awayBet: game['awayBet'],
-                homeScore: game['homeScore'],
-                awayScore: game['awayScore'],
-                onBetChanged: (home, away) {
-                  debugPrint('Palpite: ${game['homeTeam']} $home x $away ${game['awayTeam']}');
-                },
-              ))),
+          ...List<Widget>.from((group['games'] as List).asMap().entries.map((entry) {
+            final index = entry.key;
+            final game = entry.value;
+            final gameId = 'grupo_${group['name']}_$index';
+
+            return MatchCard(
+              key: ValueKey(gameId),
+              homeTeam: game['homeTeam'],
+              awayTeam: game['awayTeam'],
+              homeFlag: game['homeFlag'],
+              awayFlag: game['awayFlag'],
+              date: game['date'],
+              time: game['time'],
+              status: game['status'] ?? 'open',
+              isEditable: game['status'] == 'open',
+              gameId: gameId,
+              homeBet: palpites[gameId]?['home'],
+              awayBet: palpites[gameId]?['away'],
+              homeScore: game['homeScore'],
+              awayScore: game['awayScore'],
+              onBetChanged: onPalpiteChanged,
+            );
+          })),
         ],
       ),
     );

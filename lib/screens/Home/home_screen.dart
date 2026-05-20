@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Widget> _screens = [
     const HomeContent(),
-    const BetScreen(),
+    BetScreen(),
     const ParticipantesScreen(),
     const ClassificationScreen(),
     const RankingScreen(),
@@ -50,6 +50,8 @@ class _HomeScreenState extends State<HomeScreen> {
           onLoginSuccess: () => setState(() {
             _isLoggedIn = true;
             _currentIndex = 0;
+            _screens[1] = BetScreen();
+  
           }),
         ),
       );
@@ -113,6 +115,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+      //body: _screens[_currentIndex],
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

@@ -3,7 +3,10 @@ import '../../../data/group_phase_games.dart';
 import 'group_panel.dart';
 
 class GroupPhaseView extends StatelessWidget {
-  const GroupPhaseView({super.key});
+  final Function(String, int, int)? onPalpiteChanged;
+  final Map<String, Map<String, int>> palpites;
+
+  const GroupPhaseView({super.key, this.onPalpiteChanged, this.palpites = const {}});
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +24,10 @@ class GroupPhaseView extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(child: GroupPanel(group: GroupPhaseGames.groups[i])),
+                    Expanded(child: GroupPanel(group: GroupPhaseGames.groups[i], onPalpiteChanged: onPalpiteChanged, palpites: palpites)),
                     const SizedBox(width: 8),
                     if (i + 1 < GroupPhaseGames.groups.length)
-                      Expanded(child: GroupPanel(group: GroupPhaseGames.groups[i + 1]))
+                      Expanded(child: GroupPanel(group: GroupPhaseGames.groups[i + 1], onPalpiteChanged: onPalpiteChanged, palpites: palpites))
                     else
                       const Expanded(child: SizedBox()),
                   ],
@@ -38,7 +41,7 @@ class GroupPhaseView extends StatelessWidget {
           itemCount: GroupPhaseGames.groups.length,
           itemBuilder: (context, index) => Padding(
             padding: const EdgeInsets.only(bottom: 12),
-            child: GroupPanel(group: GroupPhaseGames.groups[index]),
+            child: GroupPanel(group: GroupPhaseGames.groups[index], onPalpiteChanged: onPalpiteChanged, palpites: palpites),
           ),
         );
       },
