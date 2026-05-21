@@ -1,5 +1,6 @@
 import 'package:bolao_copa_2026/data/teams.dart';
 import 'package:bolao_copa_2026/providers/resultados_provider.dart';
+import 'package:bolao_copa_2026/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -25,18 +26,10 @@ class _FinalColumnState extends State<FinalColumn> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final resultados = Provider.of<ResultadosProvider>(context, listen: false);
-
       final rFinal = resultados.getResultado(63, 64);
-      if (rFinal != null) {
-        _homeController.text = '${rFinal['home']}';
-        _awayController.text = '${rFinal['away']}';
-      }
-
+      if (rFinal != null) { _homeController.text = '${rFinal['home']}'; _awayController.text = '${rFinal['away']}'; }
       final rTerceiro = resultados.getResultado(61, 62);
-      if (rTerceiro != null) {
-        _homeTerceiroController.text = '${rTerceiro['home']}';
-        _awayTerceiroController.text = '${rTerceiro['away']}';
-      }
+      if (rTerceiro != null) { _homeTerceiroController.text = '${rTerceiro['home']}'; _awayTerceiroController.text = '${rTerceiro['away']}'; }
     });
   }
 
@@ -60,6 +53,8 @@ class _FinalColumnState extends State<FinalColumn> {
     final away = int.tryParse(_awayController.text);
     if (home != null && away != null) {
       resultados.setResultado(63, 64, home, away);
+      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+      firebaseService.calculatePointsForGame('final', home, away);
     }
   }
 
@@ -68,26 +63,22 @@ class _FinalColumnState extends State<FinalColumn> {
     final away = int.tryParse(_awayTerceiroController.text);
     if (home != null && away != null) {
       resultados.setResultado(61, 62, home, away);
+      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+      firebaseService.calculatePointsForGame('terceiro', home, away);
     }
   }
 
   void _passarPenaltisFinal(bool timeCima, ResultadosProvider resultados, String? timeCimaNome, String? timeBaixoNome) {
     _penaltisFinalDecididos = true;
-    if (timeCima && timeCimaNome != null) {
-      resultados.setAvancou(65, timeCimaNome);
-    } else if (!timeCima && timeBaixoNome != null) {
-      resultados.setAvancou(65, timeBaixoNome);
-    }
+    if (timeCima && timeCimaNome != null) resultados.setAvancou(65, timeCimaNome);
+    else if (!timeCima && timeBaixoNome != null) resultados.setAvancou(65, timeBaixoNome);
     setState(() {});
   }
 
   void _passarPenaltisTerceiro(bool timeCima, ResultadosProvider resultados, String? timeCimaNome, String? timeBaixoNome) {
     _penaltisTerceiroDecididos = true;
-    if (timeCima && timeCimaNome != null) {
-      resultados.setAvancou(66, timeCimaNome);
-    } else if (!timeCima && timeBaixoNome != null) {
-      resultados.setAvancou(66, timeBaixoNome);
-    }
+    if (timeCima && timeCimaNome != null) resultados.setAvancou(66, timeCimaNome);
+    else if (!timeCima && timeBaixoNome != null) resultados.setAvancou(66, timeBaixoNome);
     setState(() {});
   }
 
@@ -102,16 +93,11 @@ class _FinalColumnState extends State<FinalColumn> {
     String campeao = 'A definir';
     final resultadoFinal = resultados.getResultado(63, 64);
     if (resultadoFinal != null) {
-      if (resultadoFinal['home']! > resultadoFinal['away']!) {
-        campeao = finalistaCima ?? '?';
-      } else if (resultadoFinal['away']! > resultadoFinal['home']!) {
-        campeao = finalistaBaixo ?? '?';
-      }
+      if (resultadoFinal['home']! > resultadoFinal['away']!) campeao = finalistaCima ?? '?';
+      else if (resultadoFinal['away']! > resultadoFinal['home']!) campeao = finalistaBaixo ?? '?';
     }
     final campeaoPenaltis = resultados.getTime(65);
-    if (campeaoPenaltis != null) {
-      campeao = campeaoPenaltis;
-    }
+    if (campeaoPenaltis != null) campeao = campeaoPenaltis;
 
     final empateFinal = _isEmpate(_homeController, _awayController) && !_penaltisFinalDecididos;
     final empateTerceiro = _isEmpate(_homeTerceiroController, _awayTerceiroController) && !_penaltisTerceiroDecididos;
@@ -122,15 +108,13 @@ class _FinalColumnState extends State<FinalColumn> {
         const SizedBox(height: 160),
         Text('FINAL', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
         const SizedBox(height: 8),
-        _finalista(context, finalistaCima, _homeController, (r) => _salvarResultadoFinal(r),
-            empateFinal ? () => _passarPenaltisFinal(true, resultados, finalistaCima, finalistaBaixo) : null),
+        _finalista(context, finalistaCima, _homeController, (r) => _salvarResultadoFinal(r), empateFinal ? () => _passarPenaltisFinal(true, resultados, finalistaCima, finalistaBaixo) : null),
         const SizedBox(height: 8),
         const Icon(Icons.arrow_downward, color: Colors.grey, size: 20),
         Image.asset('assets/images/trofeu_copa.png', width: 100, height: 130, fit: BoxFit.contain),
         const Icon(Icons.arrow_upward, color: Colors.grey, size: 20),
         const SizedBox(height: 8),
-        _finalista(context, finalistaBaixo, _awayController, (r) => _salvarResultadoFinal(r),
-            empateFinal ? () => _passarPenaltisFinal(false, resultados, finalistaCima, finalistaBaixo) : null),
+        _finalista(context, finalistaBaixo, _awayController, (r) => _salvarResultadoFinal(r), empateFinal ? () => _passarPenaltisFinal(false, resultados, finalistaCima, finalistaBaixo) : null),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -145,8 +129,7 @@ class _FinalColumnState extends State<FinalColumn> {
     );
   }
 
-  Widget _finalista(BuildContext context, String? nome, TextEditingController controller,
-      Function(ResultadosProvider) onSalvar, VoidCallback? onPenalti) {
+  Widget _finalista(BuildContext context, String? nome, TextEditingController controller, Function(ResultadosProvider) onSalvar, VoidCallback? onPenalti) {
     final flag = nome != null ? Teams.get(nome).flag : '⚽';
     final name = nome ?? '?';
     final resultados = Provider.of<ResultadosProvider>(context, listen: false);
@@ -157,39 +140,13 @@ class _FinalColumnState extends State<FinalColumn> {
         decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
         child: Row(
           children: [
-            Expanded(
-              child: Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(flag, style: const TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
-                    Flexible(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                  ],
-                ),
-              ),
-            ),
+            Expanded(child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [Text(flag, style: const TextStyle(fontSize: 14)), const SizedBox(width: 6), Flexible(child: Text(name, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis))]))),
             Container(width: 1, color: Theme.of(context).dividerColor),
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(
-                  width: 30,
-                  child: Center(
-                    child: SizedBox(
-                      width: 22, height: 18,
-                      child: TextField(
-                        controller: controller,
-                        textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                        decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
-                        onChanged: (_) => onSalvar(resultados),
-                      ),
-                    ),
-                  ),
-                ),
-                if (onPenalti != null)
-                  GestureDetector(onTap: onPenalti, child: const Text('⚽', style: TextStyle(fontSize: 10))),
+                SizedBox(width: 30, child: Center(child: SizedBox(width: 22, height: 18, child: TextField(controller: controller, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => onSalvar(resultados))))),
+                if (onPenalti != null) GestureDetector(onTap: onPenalti, child: const Text('⚽', style: TextStyle(fontSize: 10))),
               ],
             ),
           ],
@@ -219,25 +176,11 @@ class _FinalColumnState extends State<FinalColumn> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Flexible(child: Text(nomeA, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                      const SizedBox(width: 6),
-                      Text(flagA, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 24),
-                      Column(
-                        children: [
-                          SizedBox(
-                            width: 22, height: 18,
-                            child: TextField(
-                              controller: _homeTerceiroController,
-                              textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
-                              onChanged: (_) => _salvarResultadoTerceiro(resultados),
-                            ),
-                          ),
-                          if (empate)
-                            GestureDetector(onTap: () => _passarPenaltisTerceiro(true, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
-                        ],
-                      ),
+                      const SizedBox(width: 6), Text(flagA, style: const TextStyle(fontSize: 14)), const SizedBox(width: 24),
+                      Column(children: [
+                        SizedBox(width: 22, height: 18, child: TextField(controller: _homeTerceiroController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => _salvarResultadoTerceiro(resultados))),
+                        if (empate) GestureDetector(onTap: () => _passarPenaltisTerceiro(true, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+                      ]),
                     ],
                   ),
                 ),
@@ -247,25 +190,11 @@ class _FinalColumnState extends State<FinalColumn> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       Flexible(child: Text(nomeB, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
-                      const SizedBox(width: 6),
-                      Text(flagB, style: const TextStyle(fontSize: 14)),
-                      const SizedBox(width: 24),
-                      Column(
-                        children: [
-                          SizedBox(
-                            width: 22, height: 18,
-                            child: TextField(
-                              controller: _awayTerceiroController,
-                              textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-                              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
-                              onChanged: (_) => _salvarResultadoTerceiro(resultados),
-                            ),
-                          ),
-                          if (empate)
-                            GestureDetector(onTap: () => _passarPenaltisTerceiro(false, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
-                        ],
-                      ),
+                      const SizedBox(width: 6), Text(flagB, style: const TextStyle(fontSize: 14)), const SizedBox(width: 24),
+                      Column(children: [
+                        SizedBox(width: 22, height: 18, child: TextField(controller: _awayTerceiroController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => _salvarResultadoTerceiro(resultados))),
+                        if (empate) GestureDetector(onTap: () => _passarPenaltisTerceiro(false, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+                      ]),
                     ],
                   ),
                 ),

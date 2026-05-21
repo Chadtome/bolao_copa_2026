@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../data/teams.dart';
 import '../../../providers/resultados_provider.dart';
+import '../../../services/firebase_service.dart';
 
 class FaseColuna extends StatefulWidget {
   final String titulo;
@@ -21,6 +22,8 @@ class _FaseColunaState extends State<FaseColuna> {
   final Map<int, TextEditingController> _homeControllers = {};
   final Map<int, TextEditingController> _awayControllers = {};
   final Map<int, bool> _penaltisDecididos = {};
+  final Map<int, int> _ultimoHome = {};
+  final Map<int, int> _ultimoAway = {};
 
   @override
   void dispose() {
@@ -107,6 +110,20 @@ class _FaseColunaState extends State<FaseColuna> {
     }
   }
 
+  String _getGameIdForSlot(int slot, int cardIndex) {
+    final base = widget.startSlot;
+    if (base == null) return '';
+    if (base == 1) return '16avos_${slot}';
+    if (base == 17) return '16avos_${cardIndex + 9}';
+    if (base == 33) return 'oitavas_${cardIndex + 1}';
+    if (base == 41) return 'oitavas_${cardIndex + 5}';
+    if (base == 49) return 'quartas_${cardIndex + 1}';
+    if (base == 53) return 'quartas_${cardIndex + 3}';
+    if (base == 57) return 'semi_1';
+    if (base == 59) return 'semi_2';
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -152,21 +169,10 @@ class _FaseColunaState extends State<FaseColuna> {
           children: [
             Row(
               children: widget.invertido
-                  ? [
-                      _buildCampos(context, index, resultados, timeA, timeB),
-                      Container(width: 1, color: Theme.of(context).dividerColor),
-                      _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: true),
-                    ]
-                  : [
-                      _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: false),
-                      Container(width: 1, color: Theme.of(context).dividerColor),
-                      _buildCampos(context, index, resultados, timeA, timeB),
-                    ],
+                  ? [_buildCampos(context, index, resultados, timeA, timeB), Container(width: 1, color: Theme.of(context).dividerColor), _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: true)]
+                  : [_buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: false), Container(width: 1, color: Theme.of(context).dividerColor), _buildCampos(context, index, resultados, timeA, timeB)],
             ),
-            Positioned(
-              top: 0, bottom: 0, left: 0, right: 0,
-              child: Center(child: Divider(height: 1, color: Theme.of(context).dividerColor)),
-            ),
+            Positioned(top: 0, bottom: 0, left: 0, right: 0, child: Center(child: Divider(height: 1, color: Theme.of(context).dividerColor))),
           ],
         ),
       ),
@@ -175,10 +181,7 @@ class _FaseColunaState extends State<FaseColuna> {
 
   Widget _buildTimes(BuildContext context, String timeA, String flagA, String timeB, String flagB, {required bool alinharEsquerda}) {
     return Expanded(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [_timeRow(context, flagA, timeA, alinharEsquerda), _timeRow(context, flagB, timeB, alinharEsquerda)],
-      ),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [_timeRow(context, flagA, timeA, alinharEsquerda), _timeRow(context, flagB, timeB, alinharEsquerda)]),
     );
   }
 
@@ -212,7 +215,20 @@ class _FaseColunaState extends State<FaseColuna> {
       final home = int.tryParse(homeController.text);
       final away = int.tryParse(awayController.text);
       if (home != null && away != null && slotA != null && slotB != null) {
+        if (_ultimoHome[cardIndex] == home && _ultimoAway[cardIndex] == away) return;
+        _ultimoHome[cardIndex] = home;
+        _ultimoAway[cardIndex] = away;
+
         resultados.setResultado(slotA, slotB, home, away);
+
+        final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+        final gameId = _getGameIdForSlot(slotA, cardIndex);
+
+        debugPrint('🔥 slot=$slotA, cardIndex=$cardIndex, gameId=$gameId'); // ADICIONE AQUI
+
+        if (gameId.isNotEmpty) {
+          firebaseService.calculatePointsForGame(gameId, home, away);
+        }
 
         if (home > away) {
           if (timeA != '?') _avancarProximaFase(slotA, timeA, timeB != '?' ? timeB : '', resultados);
@@ -241,41 +257,11 @@ class _FaseColunaState extends State<FaseColuna> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(
-            height: 18,
-            child: TextField(
-              controller: homeController,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              maxLength: 2,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
-              onChanged: (_) => salvarResultado(),
-            ),
-          ),
-          if (empate)
-            GestureDetector(
-              onTap: () => passarComPenaltis(true),
-              child: const Text('⚽', style: TextStyle(fontSize: 10)),
-            ),
+          SizedBox(height: 18, child: TextField(controller: homeController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => salvarResultado())),
+          if (empate) GestureDetector(onTap: () => passarComPenaltis(true), child: const Text('⚽', style: TextStyle(fontSize: 10))),
           SizedBox(height: empate ? 8 : 14),
-          SizedBox(
-            height: 18,
-            child: TextField(
-              controller: awayController,
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              maxLength: 2,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-              decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none),
-              onChanged: (_) => salvarResultado(),
-            ),
-          ),
-          if (empate)
-            GestureDetector(
-              onTap: () => passarComPenaltis(false),
-              child: const Text('⚽', style: TextStyle(fontSize: 10)),
-            ),
+          SizedBox(height: 18, child: TextField(controller: awayController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => salvarResultado())),
+          if (empate) GestureDetector(onTap: () => passarComPenaltis(false), child: const Text('⚽', style: TextStyle(fontSize: 10))),
         ],
       ),
     );

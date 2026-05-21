@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/group_phase_games.dart';
 import '../../../providers/resultados_provider.dart';
-
+import '../../../services/firebase_service.dart';
 
 class RightCard extends StatefulWidget {
   final int grupoIndex;
@@ -25,9 +25,10 @@ class RightCard extends StatefulWidget {
 }
 
 class _RightCardState extends State<RightCard> {
-  // Controladores por jogo (índice do jogo no grupo: 0-5)
   final Map<int, TextEditingController> _homeControllers = {};
   final Map<int, TextEditingController> _awayControllers = {};
+  final Map<int, int> _ultimoHome = {};
+  final Map<int, int> _ultimoAway = {};
 
   @override
   void dispose() {
@@ -39,7 +40,6 @@ class _RightCardState extends State<RightCard> {
   TextEditingController _getHomeController(int gameIndex) {
     if (!_homeControllers.containsKey(gameIndex)) {
       _homeControllers[gameIndex] = TextEditingController();
-      // Carrega valor salvo
       final group = GroupPhaseGames.groups[widget.grupoIndex];
       final games = group['games'] as List;
       final game = games[gameIndex];
@@ -138,12 +138,37 @@ class _RightCardState extends State<RightCard> {
     final awayCtrl = _getAwayController(gameIndex);
 
     void salvar() {
-      final home = int.tryParse(homeCtrl.text);
-      final away = int.tryParse(awayCtrl.text);
-      if (home != null && away != null) {
-        resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
-      }
-    }
+  final home = int.tryParse(homeCtrl.text);
+  final away = int.tryParse(awayCtrl.text);
+  if (home != null && away != null) {
+    if (_ultimoHome[gameIndex] == home && _ultimoAway[gameIndex] == away) return;
+    _ultimoHome[gameIndex] = home;
+    _ultimoAway[gameIndex] = away;
+
+    resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
+
+    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    final gameId = 'grupo_${group['name']}_$gameIndex';
+    debugPrint('🔥 Calculando pontos GRUPO: gameId=$gameId, home=$home, away=$away');
+    firebaseService.calculatePointsForGame(gameId, home, away);
+  }
+}
+
+    // void salvar() {
+    //   final home = int.tryParse(homeCtrl.text);
+    //   final away = int.tryParse(awayCtrl.text);
+    //   if (home != null && away != null) {
+    //     if (_ultimoHome[gameIndex] == home && _ultimoAway[gameIndex] == away) return;
+    //     _ultimoHome[gameIndex] = home;
+    //     _ultimoAway[gameIndex] = away;
+
+    //     resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
+
+    //     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    //     final gameId = 'grupo_${group['name']}_$gameIndex';
+    //     firebaseService.calculatePointsForGame(gameId, home, away);
+    //   }
+    // }
 
     return Expanded(
       child: Column(
