@@ -32,44 +32,38 @@ class _FaseColunaState extends State<FaseColuna> {
     super.dispose();
   }
 
-  TextEditingController _getHomeController(int index) {
-    if (!_homeControllers.containsKey(index)) {
-      _homeControllers[index] = TextEditingController();
+  TextEditingController _getHomeController(int slot) {
+    if (!_homeControllers.containsKey(slot)) {
+      _homeControllers[slot] = TextEditingController();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
-        final slotB = slotA != null ? slotA + 1 : null;
-        if (slotA != null && slotB != null) {
-          try {
-            final resultados = Provider.of<ResultadosProvider>(context, listen: false);
-            final r = resultados.getResultado(slotA, slotB);
-            if (r != null && mounted) {
-              _homeControllers[index]!.text = '${r['home']}';
-            }
-          } catch (_) {}
-        }
+        final slotB = slot + 1;
+        try {
+          final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+          final r = resultados.getResultado(slot, slotB);
+          if (r != null && mounted) {
+            _homeControllers[slot]!.text = '${r['home']}';
+          }
+        } catch (_) {}
       });
     }
-    return _homeControllers[index]!;
+    return _homeControllers[slot]!;
   }
 
-  TextEditingController _getAwayController(int index) {
-    if (!_awayControllers.containsKey(index)) {
-      _awayControllers[index] = TextEditingController();
+  TextEditingController _getAwayController(int slot) {
+    if (!_awayControllers.containsKey(slot)) {
+      _awayControllers[slot] = TextEditingController();
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
-        final slotB = slotA != null ? slotA + 1 : null;
-        if (slotA != null && slotB != null) {
-          try {
-            final resultados = Provider.of<ResultadosProvider>(context, listen: false);
-            final r = resultados.getResultado(slotA, slotB);
-            if (r != null && mounted) {
-              _awayControllers[index]!.text = '${r['away']}';
-            }
-          } catch (_) {}
-        }
+        final slotB = slot + 1;
+        try {
+          final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+          final r = resultados.getResultado(slot, slotB);
+          if (r != null && mounted) {
+            _awayControllers[slot]!.text = '${r['away']}';
+          }
+        } catch (_) {}
       });
     }
-    return _awayControllers[index]!;
+    return _awayControllers[slot]!;
   }
 
   void _avancarProximaFase(int slot, String vencedor, String perdedor, ResultadosProvider resultados) {
@@ -113,7 +107,7 @@ class _FaseColunaState extends State<FaseColuna> {
   String _getGameIdForSlot(int slot, int cardIndex) {
     final base = widget.startSlot;
     if (base == null) return '';
-    if (base == 1) return '16avos_${slot}';
+    if (base == 1) return '16avos_${cardIndex + 1}';
     if (base == 17) return '16avos_${cardIndex + 9}';
     if (base == 33) return 'oitavas_${cardIndex + 1}';
     if (base == 41) return 'oitavas_${cardIndex + 5}';
@@ -138,6 +132,8 @@ class _FaseColunaState extends State<FaseColuna> {
 
   Widget _buildCard(BuildContext context, int index) {
     final resultados = Provider.of<ResultadosProvider>(context);
+    final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
+    final slotB = slotA != null ? slotA + 1 : null;
 
     String timeA = '?';
     String timeB = '?';
@@ -169,8 +165,8 @@ class _FaseColunaState extends State<FaseColuna> {
           children: [
             Row(
               children: widget.invertido
-                  ? [_buildCampos(context, index, resultados, timeA, timeB), Container(width: 1, color: Theme.of(context).dividerColor), _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: true)]
-                  : [_buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: false), Container(width: 1, color: Theme.of(context).dividerColor), _buildCampos(context, index, resultados, timeA, timeB)],
+                  ? [_buildCampos(context, index, slotA, slotB, resultados, timeA, timeB), Container(width: 1, color: Theme.of(context).dividerColor), _buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: true)]
+                  : [_buildTimes(context, timeA, flagA, timeB, flagB, alinharEsquerda: false), Container(width: 1, color: Theme.of(context).dividerColor), _buildCampos(context, index, slotA, slotB, resultados, timeA, timeB)],
             ),
             Positioned(top: 0, bottom: 0, left: 0, right: 0, child: Center(child: Divider(height: 1, color: Theme.of(context).dividerColor))),
           ],
@@ -198,12 +194,11 @@ class _FaseColunaState extends State<FaseColuna> {
     );
   }
 
-  Widget _buildCampos(BuildContext context, int cardIndex, ResultadosProvider resultados, String timeA, String timeB) {
-    final slotA = widget.startSlot != null ? widget.startSlot! + cardIndex * 2 : null;
-    final slotB = widget.startSlot != null ? widget.startSlot! + cardIndex * 2 + 1 : null;
+  Widget _buildCampos(BuildContext context, int cardIndex, int? slotA, int? slotB, ResultadosProvider resultados, String timeA, String timeB) {
+    if (slotA == null || slotB == null) return const SizedBox(width: 30);
 
-    final homeController = _getHomeController(cardIndex);
-    final awayController = _getAwayController(cardIndex);
+    final homeController = _getHomeController(slotA);
+    final awayController = _getAwayController(slotA);
 
     bool isEmpate() {
       final home = int.tryParse(homeController.text);
@@ -214,18 +209,15 @@ class _FaseColunaState extends State<FaseColuna> {
     void salvarResultado() {
       final home = int.tryParse(homeController.text);
       final away = int.tryParse(awayController.text);
-      if (home != null && away != null && slotA != null && slotB != null) {
-        if (_ultimoHome[cardIndex] == home && _ultimoAway[cardIndex] == away) return;
-        _ultimoHome[cardIndex] = home;
-        _ultimoAway[cardIndex] = away;
+      if (home != null && away != null) {
+        if (_ultimoHome[slotA] == home && _ultimoAway[slotA] == away) return;
+        _ultimoHome[slotA] = home;
+        _ultimoAway[slotA] = away;
 
         resultados.setResultado(slotA, slotB, home, away);
 
         final firebaseService = Provider.of<FirebaseService>(context, listen: false);
         final gameId = _getGameIdForSlot(slotA, cardIndex);
-
-        debugPrint('🔥 slot=$slotA, cardIndex=$cardIndex, gameId=$gameId'); // ADICIONE AQUI
-
         if (gameId.isNotEmpty) {
           firebaseService.calculatePointsForGame(gameId, home, away);
         }
@@ -239,18 +231,16 @@ class _FaseColunaState extends State<FaseColuna> {
     }
 
     void passarComPenaltis(bool timeAVenceu) {
-      if (slotA != null && slotB != null) {
-        _penaltisDecididos[cardIndex] = true;
-        if (timeAVenceu && timeA != '?') {
-          _avancarProximaFase(slotA, timeA, timeB != '?' ? timeB : '', resultados);
-        } else if (!timeAVenceu && timeB != '?') {
-          _avancarProximaFase(slotA, timeB, timeA != '?' ? timeA : '', resultados);
-        }
-        setState(() {});
+      _penaltisDecididos[slotA] = true;
+      if (timeAVenceu && timeA != '?') {
+        _avancarProximaFase(slotA, timeA, timeB != '?' ? timeB : '', resultados);
+      } else if (!timeAVenceu && timeB != '?') {
+        _avancarProximaFase(slotA, timeB, timeA != '?' ? timeA : '', resultados);
       }
+      setState(() {});
     }
 
-    final empate = isEmpate() && !(_penaltisDecididos[cardIndex] ?? false);
+    final empate = isEmpate() && !(_penaltisDecididos[slotA] ?? false);
 
     return SizedBox(
       width: 30,

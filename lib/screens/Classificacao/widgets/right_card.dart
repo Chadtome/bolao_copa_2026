@@ -154,22 +154,6 @@ class _RightCardState extends State<RightCard> {
   }
 }
 
-    // void salvar() {
-    //   final home = int.tryParse(homeCtrl.text);
-    //   final away = int.tryParse(awayCtrl.text);
-    //   if (home != null && away != null) {
-    //     if (_ultimoHome[gameIndex] == home && _ultimoAway[gameIndex] == away) return;
-    //     _ultimoHome[gameIndex] = home;
-    //     _ultimoAway[gameIndex] = away;
-
-    //     resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
-
-    //     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-    //     final gameId = 'grupo_${group['name']}_$gameIndex';
-    //     firebaseService.calculatePointsForGame(gameId, home, away);
-    //   }
-    // }
-
     return Expanded(
       child: Column(
         children: [
