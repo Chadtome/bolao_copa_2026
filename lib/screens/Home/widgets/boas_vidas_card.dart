@@ -1,84 +1,66 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../../services/firebase_service.dart';
 
-class BoasVindasCard extends StatelessWidget {
+class BoasVindasCard extends StatefulWidget {
   final bool isWide;
-
   const BoasVindasCard({super.key, required this.isWide});
+
+  @override
+  State<BoasVindasCard> createState() => _BoasVindasCardState();
+}
+
+class _BoasVindasCardState extends State<BoasVindasCard> {
+  String _nome = 'Usuário';
+
+  @override
+  void initState() {
+    super.initState();
+    _carregarNome();
+  }
+
+  Future<void> _carregarNome() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    try {
+      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+      final userData = await firebaseService.getCurrentUserData();
+      if (userData != null && mounted) {
+        setState(() => _nome = userData.name);
+      }
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Theme.of(context).colorScheme.primary,
-            Theme.of(context).colorScheme.primary.withOpacity(0.7),
-          ],
-        ),
+        gradient: LinearGradient(colors: [Theme.of(context).colorScheme.primary, Theme.of(context).colorScheme.primary.withOpacity(0.7)]),
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'Bolão Copa do Mundo 2026',
-            style: GoogleFonts.poppins(
-              fontSize: isWide ? 24 : 18,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-            ),
-          ),
+          Text('Bolão Copa do Mundo 2026',
+              style: GoogleFonts.poppins(fontSize: widget.isWide ? 24 : 18, fontWeight: FontWeight.w700, color: Colors.white)),
           const SizedBox(height: 16),
-          Text(
-            'Bem-vindo "Usuário"!!',
-            style: GoogleFonts.poppins(
-              fontSize: isWide ? 20 : 16,
-              fontWeight: FontWeight.w600,
-              color: Colors.white,
-            ),
-          ),
+          Text('Bem-vindo $_nome!!',
+              style: GoogleFonts.poppins(fontSize: widget.isWide ? 20 : 16, fontWeight: FontWeight.w600, color: Colors.white)),
           const SizedBox(height: 12),
-          Text(
-            'Faça seus palpites e mostre que você tem mais sorte que todos os outros participantes!!',
-            style: GoogleFonts.inter(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.9),
-            ),
-          ),
+          Text('Faça seus palpites e mostre que você tem mais sorte que todos os outros participantes!!',
+              style: GoogleFonts.inter(fontSize: 14, color: Colors.white.withOpacity(0.9))),
           const SizedBox(height: 16),
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFFFDF00),
-              borderRadius: BorderRadius.circular(8),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.2),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Text(
-              '"Usuário", não esqueça de cadastrar seus palpites da primeira fase!!',
-              style: GoogleFonts.inter(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: Colors.black87,
-                fontStyle: FontStyle.italic,
-              ),
-              textAlign: TextAlign.center,
-            ),
+            width: double.infinity, padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(color: const Color(0xFFFFDF00), borderRadius: BorderRadius.circular(8),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4, offset: const Offset(0, 2))]),
+            child: Text('$_nome, não esqueça de cadastrar seus palpites da primeira fase!!',
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87, fontStyle: FontStyle.italic),
+                textAlign: TextAlign.center),
           ),
         ],
       ),
