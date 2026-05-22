@@ -293,4 +293,24 @@ Future<void> calculatePointsForGame(String gameId, int homeScore, int awayScore)
   }
 }
 
+// Salvar palpite do campeão
+Future<void> salvarCampeaoPalpite(String userId, String campeao) async {
+  await _firestore.collection('users').doc(userId).update({
+    'campeaoPalpite': campeao,
+  });
+}
+
+// Verificar palpite do campeão (10 pontos)
+Future<void> verificarCampeaoPalpite(String campeao) async {
+  final snapshot = await _firestore
+      .collection('users')
+      .where('campeaoPalpite', isEqualTo: campeao)
+      .get();
+
+  for (var doc in snapshot.docs) {
+    final currentPoints = (doc['totalPoints'] as num?)?.toInt() ?? 0;
+    await doc.reference.update({'totalPoints': currentPoints + 10});
+  }
+}
+
 }

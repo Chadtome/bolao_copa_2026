@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
@@ -20,11 +21,13 @@ class _PalpitesModalState extends State<PalpitesModal> {
   String _faseSelecionada = 'Grupo A';
   List<Map<String, dynamic>> _palpites = [];
   bool _isLoading = true;
+  String? _campeaoEscolhido;
 
   @override
   void initState() {
     super.initState();
     _carregarPalpites();
+    _carregarCampeao();
   }
 
   Future<void> _carregarPalpites() async {
@@ -32,13 +35,19 @@ class _PalpitesModalState extends State<PalpitesModal> {
     final bets = await firebaseService.getUserBetsList(widget.userId);
 
     if (bets != null) {
-      setState(() {
-        _palpites = bets;
-        _isLoading = false;
-      });
+      setState(() { _palpites = bets; _isLoading = false; });
     } else {
       setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _carregarCampeao() async {
+    try {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
+      if (userDoc.exists && mounted) {
+        setState(() => _campeaoEscolhido = userDoc['campeaoPalpite']);
+      }
+    } catch (_) {}
   }
 
   @override
@@ -51,6 +60,26 @@ class _PalpitesModalState extends State<PalpitesModal> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (_campeaoEscolhido != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(colors: [Colors.green.shade800, Colors.green.shade600, Colors.amber.shade700]),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text('🏆', style: TextStyle(fontSize: 20)),
+                        const SizedBox(width: 8),
+                        Text('Campeão: $_campeaoEscolhido',
+                            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 13)),
+                      ],
+                    ),
+                  ),
+                ),
               DropdownButtonFormField<String>(
                 value: _faseSelecionada,
                 decoration: InputDecoration(
@@ -67,19 +96,14 @@ class _PalpitesModalState extends State<PalpitesModal> {
               ),
               const SizedBox(height: 16),
               if (_isLoading)
-                const Padding(
-                  padding: EdgeInsets.all(24),
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
               else
                 ..._buildGames(_faseSelecionada, context),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('FECHAR')),
-      ],
+      actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('FECHAR'))],
     );
   }
 
@@ -179,13 +203,8 @@ class _PalpitesModalState extends State<PalpitesModal> {
         awayTeam = _timeDoSlot(slotB) ?? 'Time B';
       } else if (gameId.startsWith('semi_')) {
         final num = int.tryParse(gameId.replaceAll('semi_', '')) ?? 0;
-        if (num == 1) {
-          homeTeam = _timeDoSlot(57) ?? 'Time A';
-          awayTeam = _timeDoSlot(58) ?? 'Time B';
-        } else {
-          homeTeam = _timeDoSlot(59) ?? 'Time A';
-          awayTeam = _timeDoSlot(60) ?? 'Time B';
-        }
+        if (num == 1) { homeTeam = _timeDoSlot(57) ?? 'Time A'; awayTeam = _timeDoSlot(58) ?? 'Time B'; }
+        else { homeTeam = _timeDoSlot(59) ?? 'Time A'; awayTeam = _timeDoSlot(60) ?? 'Time B'; }
       } else if (gameId == 'final') {
         homeTeam = _timeDoSlot(63) ?? 'Time A';
         awayTeam = _timeDoSlot(64) ?? 'Time B';
@@ -199,10 +218,8 @@ class _PalpitesModalState extends State<PalpitesModal> {
         child: ListTile(
           dense: true,
           title: Text('$homeTeam vs $awayTeam', style: const TextStyle(fontSize: 13)),
-          trailing: Text(
-            '$homeBet x $awayBet',
-            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
-          ),
+          trailing: Text('$homeBet x $awayBet',
+              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
         ),
       );
     }).toList();

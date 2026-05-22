@@ -49,14 +49,23 @@ class _FinalColumnState extends State<FinalColumn> {
   }
 
   void _salvarResultadoFinal(ResultadosProvider resultados) {
-    final home = int.tryParse(_homeController.text);
-    final away = int.tryParse(_awayController.text);
-    if (home != null && away != null) {
-      resultados.setResultado(63, 64, home, away);
-      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-      firebaseService.calculatePointsForGame('final', home, away);
+  final home = int.tryParse(_homeController.text);
+  final away = int.tryParse(_awayController.text);
+  if (home != null && away != null) {
+    resultados.setResultado(63, 64, home, away);
+    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    firebaseService.calculatePointsForGame('final', home, away);
+
+    // Verifica palpite do campeão
+    if (home > away) {
+      final campeao = resultados.getTime(63);
+      if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
+    } else if (away > home) {
+      final campeao = resultados.getTime(64);
+      if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
     }
   }
+}
 
   void _salvarResultadoTerceiro(ResultadosProvider resultados) {
     final home = int.tryParse(_homeTerceiroController.text);

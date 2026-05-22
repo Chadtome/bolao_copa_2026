@@ -9,6 +9,7 @@ class UserModel {
   final DateTime? createdAt;
   final String? whatsapp;
   final String? pix;
+  final String? campeaoPalpite; // NOVO
 
   UserModel({
     required this.id,
@@ -21,6 +22,7 @@ class UserModel {
     this.createdAt,
     this.whatsapp,
     this.pix,
+    this.campeaoPalpite, // NOVO
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +36,7 @@ class UserModel {
       'createdAt': createdAt ?? DateTime.now(),
       'whatsapp': whatsapp,
       'pix': pix,
+      'campeaoPalpite': campeaoPalpite, // NOVO
     };
   }
 
@@ -49,6 +52,7 @@ class UserModel {
       createdAt: map['createdAt']?.toDate(),
       whatsapp: map['whatsapp'],
       pix: map['pix'],
+      campeaoPalpite: map['campeaoPalpite'], // NOVO
     );
   }
 }

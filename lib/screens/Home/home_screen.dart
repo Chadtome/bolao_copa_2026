@@ -123,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.sports_soccer), label: 'Palpites'),
-          NavigationDestination(icon: Icon(Icons.people), label: 'Participantes'),
+          NavigationDestination(icon: Icon(Icons.people), label: 'Usuários'),
           NavigationDestination(icon: Icon(Icons.leaderboard), label: 'Resultados'),
           NavigationDestination(icon: Icon(Icons.emoji_events), label: 'Ranking'),
         ],

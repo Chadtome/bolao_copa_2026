@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/firebase_service.dart';
 import 'widgets/group_phase_view.dart';
 import 'widgets/knockout_phase_view.dart';
+import 'widgets/campeao_palpite_card.dart';
 
 class BetScreen extends StatefulWidget {
   const BetScreen({super.key});
@@ -35,29 +36,19 @@ class _BetScreenState extends State<BetScreen> {
 
   Future<void> _carregarPalpites() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      setState(() => _isLoading = false);
-      return;
-    }
-
+    if (user == null) { setState(() => _isLoading = false); return; }
     try {
       final firebaseService = Provider.of<FirebaseService>(context, listen: false);
       final bets = await firebaseService.getUserBetsList(user.uid);
       if (bets != null) {
         setState(() {
           for (var bet in bets) {
-            _palpites[bet['gameId']] = {
-              'home': bet['homeBet'],
-              'away': bet['awayBet'],
-            };
+            _palpites[bet['gameId']] = {'home': bet['homeBet'], 'away': bet['awayBet']};
           }
         });
       }
-    } catch (e) {
-      debugPrint('Erro ao carregar palpites: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
+    } catch (e) { debugPrint('Erro ao carregar palpites: $e'); }
+    finally { setState(() => _isLoading = false); }
   }
 
   void _onPalpiteChanged(String gameId, int home, int away) {
@@ -67,38 +58,21 @@ class _BetScreenState extends State<BetScreen> {
   Future<void> _salvarPalpites(BuildContext context) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Faça login primeiro!'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Faça login primeiro!'), backgroundColor: Colors.red));
       return;
     }
-
     if (_palpites.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Preencha pelo menos um palpite!'), backgroundColor: Colors.orange),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Preencha pelo menos um palpite!'), backgroundColor: Colors.orange));
       return;
     }
-
     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-
     try {
       for (var entry in _palpites.entries) {
-        await firebaseService.saveBet(
-          userId: user.uid,
-          gameId: entry.key,
-          homeBet: entry.value['home']!,
-          awayBet: entry.value['away']!,
-        );
+        await firebaseService.saveBet(userId: user.uid, gameId: entry.key, homeBet: entry.value['home']!, awayBet: entry.value['away']!);
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Palpites salvos com sucesso! ✅'), backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Palpites salvos com sucesso! ✅'), backgroundColor: Colors.green));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red));
     }
   }
 
@@ -111,16 +85,9 @@ class _BetScreenState extends State<BetScreen> {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(
-                icon: const Icon(Icons.chevron_left),
-                onPressed: _currentPhase > 0 ? () => setState(() => _currentPhase--) : null,
-              ),
-              Text(_phases[_currentPhase]['title'],
-                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
-              IconButton(
-                icon: const Icon(Icons.chevron_right),
-                onPressed: _currentPhase < _phases.length - 1 ? () => setState(() => _currentPhase++) : null,
-              ),
+              IconButton(icon: const Icon(Icons.chevron_left), onPressed: _currentPhase > 0 ? () => setState(() => _currentPhase--) : null),
+              Text(_phases[_currentPhase]['title'], style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+              IconButton(icon: const Icon(Icons.chevron_right), onPressed: _currentPhase < _phases.length - 1 ? () => setState(() => _currentPhase++) : null),
             ],
           ),
         ),
@@ -131,6 +98,7 @@ class _BetScreenState extends State<BetScreen> {
                   ? GroupPhaseView(key: ValueKey(_palpites.length), onPalpiteChanged: _onPalpiteChanged, palpites: _palpites)
                   : KnockoutPhaseView(currentPhase: _currentPhase, onPalpiteChanged: _onPalpiteChanged, palpites: _palpites),
         ),
+        if (_currentPhase == 0) const CampeaoPalpiteCard(),
         Padding(
           padding: const EdgeInsets.all(16),
           child: SizedBox(
