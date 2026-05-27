@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/providers/palpites_provider.dart';
 import 'package:bolao_copa_2026/providers/user_provider.dart';
 import 'package:bolao_copa_2026/screens/Admin/gerenciar_fases_screen.dart';
 import 'package:bolao_copa_2026/services/firebase_service.dart';
@@ -87,11 +88,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
                 if (confirmar == true) {
-                  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-                  await firebaseService.logout();
-                  Provider.of<UserProvider>(context, listen: false).clear();
-                  setState(() => _isLoggedIn = false);
-                }
+  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+  await firebaseService.logout();
+  Provider.of<UserProvider>(context, listen: false).clear();
+  Provider.of<PalpitesProvider>(context, listen: false).limpar(); // NOVO
+  setState(() => _isLoggedIn = false);
+}
+
               }
             },
             itemBuilder: (context) => [

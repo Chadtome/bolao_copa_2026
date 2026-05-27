@@ -184,7 +184,7 @@ class _BetScreenState extends State<BetScreen> {
           child: _isLoading
               ? const Center(child: CircularProgressIndicator())
               : _currentPhase == 0
-                  ? GroupPhaseView(key: ValueKey(palpites.length), onPalpiteChanged: _onPalpiteChanged, palpites: palpites, showValidation: _showValidation, isBlocked: _isBlocked)
+                  ? GroupPhaseView(onPalpiteChanged: _onPalpiteChanged, palpites: palpites, showValidation: _showValidation, isBlocked: _isBlocked)
                   : KnockoutPhaseView(currentPhase: _currentPhase, onPalpiteChanged: _onPalpiteChanged, palpites: palpites, showValidation: _showValidation, isBlocked: _isBlocked),
         ),
         if (_currentPhase == 0) const CampeaoPalpiteCard(),

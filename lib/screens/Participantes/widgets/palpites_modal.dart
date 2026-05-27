@@ -22,18 +22,19 @@ class _PalpitesModalState extends State<PalpitesModal> {
   List<Map<String, dynamic>> _palpites = [];
   bool _isLoading = true;
   String? _campeaoEscolhido;
+  Map<String, bool> _fasesStatus = {};
 
   @override
   void initState() {
     super.initState();
     _carregarPalpites();
     _carregarCampeao();
+    _carregarStatusFases();
   }
 
   Future<void> _carregarPalpites() async {
     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
     final bets = await firebaseService.getUserBetsList(widget.userId);
-
     if (bets != null) {
       setState(() { _palpites = bets; _isLoading = false; });
     } else {
@@ -50,8 +51,38 @@ class _PalpitesModalState extends State<PalpitesModal> {
     } catch (_) {}
   }
 
+  Future<void> _carregarStatusFases() async {
+    try {
+      final doc = await FirebaseFirestore.instance.collection('config').doc('fases').get();
+      if (doc.exists && doc.data() != null) {
+        setState(() {
+          doc.data()!.forEach((key, value) {
+            _fasesStatus[key] = value == true;
+          });
+        });
+      }
+    } catch (_) {}
+  }
+
+  String _getFaseKey(String fase) {
+    if (fase.startsWith('Grupo')) return 'fase_grupos';
+    if (fase == '16 avos') return '16_avos';
+    if (fase == 'Oitavas') return 'oitavas';
+    if (fase == 'Quartas') return 'quartas';
+    if (fase == 'Semi') return 'semi';
+    if (fase == 'Final') return 'final';
+    return '';
+  }
+
+  bool _isFaseFechada(String fase) {
+    final key = _getFaseKey(fase);
+    return _fasesStatus[key] == false;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final faseFechada = _isFaseFechada(_faseSelecionada);
+
     return AlertDialog(
       title: Text('Palpites de ${widget.nome}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
       content: SizedBox(
@@ -97,6 +128,19 @@ class _PalpitesModalState extends State<PalpitesModal> {
               const SizedBox(height: 16),
               if (_isLoading)
                 const Padding(padding: EdgeInsets.all(24), child: Center(child: CircularProgressIndicator()))
+              else if (!faseFechada)
+                Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.lock, size: 40, color: Colors.grey),
+                      const SizedBox(height: 12),
+                      Text('Palpites disponíveis apenas após o fechamento da fase.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
+                    ],
+                  ),
+                )
               else
                 ..._buildGames(_faseSelecionada, context),
             ],
