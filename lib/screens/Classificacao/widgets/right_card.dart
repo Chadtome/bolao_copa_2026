@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../data/group_phase_games.dart';
 import '../../../providers/resultados_provider.dart';
+import '../../../providers/user_provider.dart';
 import '../../../services/firebase_service.dart';
 
 class RightCard extends StatefulWidget {
@@ -138,21 +139,20 @@ class _RightCardState extends State<RightCard> {
     final awayCtrl = _getAwayController(gameIndex);
 
     void salvar() {
-  final home = int.tryParse(homeCtrl.text);
-  final away = int.tryParse(awayCtrl.text);
-  if (home != null && away != null) {
-    if (_ultimoHome[gameIndex] == home && _ultimoAway[gameIndex] == away) return;
-    _ultimoHome[gameIndex] = home;
-    _ultimoAway[gameIndex] = away;
+      final home = int.tryParse(homeCtrl.text);
+      final away = int.tryParse(awayCtrl.text);
+      if (home != null && away != null) {
+        if (_ultimoHome[gameIndex] == home && _ultimoAway[gameIndex] == away) return;
+        _ultimoHome[gameIndex] = home;
+        _ultimoAway[gameIndex] = away;
 
-    resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
+        resultados.setResultadoGrupo(game['homeTeam'], game['awayTeam'], home, away);
 
-    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-    final gameId = 'grupo_${group['name']}_$gameIndex';
-    debugPrint('🔥 Calculando pontos GRUPO: gameId=$gameId, home=$home, away=$away');
-    firebaseService.calculatePointsForGame(gameId, home, away);
-  }
-}
+        final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+        final gameId = 'grupo_${group['name']}_$gameIndex';
+        firebaseService.calculatePointsForGame(gameId, home, away);
+      }
+    }
 
     return Expanded(
       child: Column(
@@ -204,18 +204,22 @@ class _RightCardState extends State<RightCard> {
   }
 
   Widget _campo(TextEditingController controller, VoidCallback onSalvar) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final isAdmin = userProvider.isAdmin;
+
     return SizedBox(
       width: 30,
       height: 28,
       child: TextField(
         controller: controller,
+        readOnly: !isAdmin,
         textAlign: TextAlign.center,
         keyboardType: TextInputType.number,
         maxLength: 2,
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
         decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero,
             filled: true, fillColor: Colors.transparent, border: InputBorder.none, enabledBorder: InputBorder.none, focusedBorder: InputBorder.none),
-        onChanged: (_) => onSalvar(),
+        onChanged: isAdmin ? (_) => onSalvar() : null,
       ),
     );
   }

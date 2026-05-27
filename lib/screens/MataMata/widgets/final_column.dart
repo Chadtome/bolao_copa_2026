@@ -1,10 +1,10 @@
 import 'package:bolao_copa_2026/data/teams.dart';
 import 'package:bolao_copa_2026/providers/resultados_provider.dart';
+import 'package:bolao_copa_2026/providers/user_provider.dart';
 import 'package:bolao_copa_2026/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-
 
 class FinalColumn extends StatefulWidget {
   const FinalColumn({super.key});
@@ -35,10 +35,8 @@ class _FinalColumnState extends State<FinalColumn> {
 
   @override
   void dispose() {
-    _homeController.dispose();
-    _awayController.dispose();
-    _homeTerceiroController.dispose();
-    _awayTerceiroController.dispose();
+    _homeController.dispose(); _awayController.dispose();
+    _homeTerceiroController.dispose(); _awayTerceiroController.dispose();
     super.dispose();
   }
 
@@ -49,23 +47,21 @@ class _FinalColumnState extends State<FinalColumn> {
   }
 
   void _salvarResultadoFinal(ResultadosProvider resultados) {
-  final home = int.tryParse(_homeController.text);
-  final away = int.tryParse(_awayController.text);
-  if (home != null && away != null) {
-    resultados.setResultado(63, 64, home, away);
-    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-    firebaseService.calculatePointsForGame('final', home, away);
-
-    // Verifica palpite do campeão
-    if (home > away) {
-      final campeao = resultados.getTime(63);
-      if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
-    } else if (away > home) {
-      final campeao = resultados.getTime(64);
-      if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
+    final home = int.tryParse(_homeController.text);
+    final away = int.tryParse(_awayController.text);
+    if (home != null && away != null) {
+      resultados.setResultado(63, 64, home, away);
+      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+      firebaseService.calculatePointsForGame('final', home, away);
+      if (home > away) {
+        final campeao = resultados.getTime(63);
+        if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
+      } else if (away > home) {
+        final campeao = resultados.getTime(64);
+        if (campeao != null) firebaseService.verificarCampeaoPalpite(campeao);
+      }
     }
   }
-}
 
   void _salvarResultadoTerceiro(ResultadosProvider resultados) {
     final home = int.tryParse(_homeTerceiroController.text);
@@ -94,6 +90,9 @@ class _FinalColumnState extends State<FinalColumn> {
   @override
   Widget build(BuildContext context) {
     final resultados = Provider.of<ResultadosProvider>(context);
+    final userProvider = Provider.of<UserProvider>(context);
+    final isAdmin = userProvider.isAdmin;
+
     final finalistaCima = resultados.getTime(63);
     final finalistaBaixo = resultados.getTime(64);
     final terceiroCima = resultados.getTime(61);
@@ -117,13 +116,13 @@ class _FinalColumnState extends State<FinalColumn> {
         const SizedBox(height: 160),
         Text('FINAL', style: GoogleFonts.poppins(fontSize: 12, fontWeight: FontWeight.w600, color: Colors.grey)),
         const SizedBox(height: 8),
-        _finalista(context, finalistaCima, _homeController, (r) => _salvarResultadoFinal(r), empateFinal ? () => _passarPenaltisFinal(true, resultados, finalistaCima, finalistaBaixo) : null),
+        _finalista(context, finalistaCima, _homeController, isAdmin ? (r) => _salvarResultadoFinal(r) : null, empateFinal && isAdmin ? () => _passarPenaltisFinal(true, resultados, finalistaCima, finalistaBaixo) : null, isAdmin),
         const SizedBox(height: 8),
         const Icon(Icons.arrow_downward, color: Colors.grey, size: 20),
         Image.asset('assets/images/trofeu_copa.png', width: 100, height: 130, fit: BoxFit.contain),
         const Icon(Icons.arrow_upward, color: Colors.grey, size: 20),
         const SizedBox(height: 8),
-        _finalista(context, finalistaBaixo, _awayController, (r) => _salvarResultadoFinal(r), empateFinal ? () => _passarPenaltisFinal(false, resultados, finalistaCima, finalistaBaixo) : null),
+        _finalista(context, finalistaBaixo, _awayController, isAdmin ? (r) => _salvarResultadoFinal(r) : null, empateFinal && isAdmin ? () => _passarPenaltisFinal(false, resultados, finalistaCima, finalistaBaixo) : null, isAdmin),
         const SizedBox(height: 12),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -133,12 +132,12 @@ class _FinalColumnState extends State<FinalColumn> {
         const SizedBox(height: 16),
         Text('3º LUGAR', style: GoogleFonts.poppins(fontSize: 11, fontWeight: FontWeight.w600, color: Colors.brown.shade400)),
         const SizedBox(height: 8),
-        _terceiroLugar(context, terceiroCima, terceiroBaixo, resultados, empateTerceiro),
+        _terceiroLugar(context, terceiroCima, terceiroBaixo, resultados, empateTerceiro, isAdmin),
       ],
     );
   }
 
-  Widget _finalista(BuildContext context, String? nome, TextEditingController controller, Function(ResultadosProvider) onSalvar, VoidCallback? onPenalti) {
+  Widget _finalista(BuildContext context, String? nome, TextEditingController controller, Function(ResultadosProvider)? onSalvar, VoidCallback? onPenalti, bool isAdmin) {
     final flag = nome != null ? Teams.get(nome).flag : '⚽';
     final name = nome ?? '?';
     final resultados = Provider.of<ResultadosProvider>(context, listen: false);
@@ -154,7 +153,7 @@ class _FinalColumnState extends State<FinalColumn> {
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                SizedBox(width: 30, child: Center(child: SizedBox(width: 22, height: 18, child: TextField(controller: controller, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => onSalvar(resultados))))),
+                SizedBox(width: 30, child: Center(child: SizedBox(width: 22, height: 18, child: TextField(controller: controller, readOnly: !isAdmin, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: onSalvar != null ? (_) => onSalvar(resultados) : null)))),
                 if (onPenalti != null) GestureDetector(onTap: onPenalti, child: const Text('⚽', style: TextStyle(fontSize: 10))),
               ],
             ),
@@ -164,7 +163,7 @@ class _FinalColumnState extends State<FinalColumn> {
     );
   }
 
-  Widget _terceiroLugar(BuildContext context, String? timeA, String? timeB, ResultadosProvider resultados, bool empate) {
+  Widget _terceiroLugar(BuildContext context, String? timeA, String? timeB, ResultadosProvider resultados, bool empate, bool isAdmin) {
     final flagA = timeA != null ? Teams.get(timeA).flag : '⚽';
     final flagB = timeB != null ? Teams.get(timeB).flag : '⚽';
     final nomeA = timeA ?? '?';
@@ -187,8 +186,8 @@ class _FinalColumnState extends State<FinalColumn> {
                       Flexible(child: Text(nomeA, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 6), Text(flagA, style: const TextStyle(fontSize: 14)), const SizedBox(width: 24),
                       Column(children: [
-                        SizedBox(width: 22, height: 18, child: TextField(controller: _homeTerceiroController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => _salvarResultadoTerceiro(resultados))),
-                        if (empate) GestureDetector(onTap: () => _passarPenaltisTerceiro(true, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+                        SizedBox(width: 22, height: 18, child: TextField(controller: _homeTerceiroController, readOnly: !isAdmin, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: isAdmin ? (_) => _salvarResultadoTerceiro(resultados) : null)),
+                        if (empate && isAdmin) GestureDetector(onTap: () => _passarPenaltisTerceiro(true, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
                       ]),
                     ],
                   ),
@@ -201,8 +200,8 @@ class _FinalColumnState extends State<FinalColumn> {
                       Flexible(child: Text(nomeB, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500), overflow: TextOverflow.ellipsis)),
                       const SizedBox(width: 6), Text(flagB, style: const TextStyle(fontSize: 14)), const SizedBox(width: 24),
                       Column(children: [
-                        SizedBox(width: 22, height: 18, child: TextField(controller: _awayTerceiroController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => _salvarResultadoTerceiro(resultados))),
-                        if (empate) GestureDetector(onTap: () => _passarPenaltisTerceiro(false, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+                        SizedBox(width: 22, height: 18, child: TextField(controller: _awayTerceiroController, readOnly: !isAdmin, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: isAdmin ? (_) => _salvarResultadoTerceiro(resultados) : null)),
+                        if (empate && isAdmin) GestureDetector(onTap: () => _passarPenaltisTerceiro(false, resultados, timeA, timeB), child: const Text('⚽', style: TextStyle(fontSize: 10))),
                       ]),
                     ],
                   ),

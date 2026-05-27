@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/providers/palpites_provider.dart';
 import 'package:bolao_copa_2026/providers/resultados_provider.dart';
 import 'package:bolao_copa_2026/providers/user_provider.dart';
 import 'package:flutter/material.dart';
@@ -41,6 +42,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider(create: (_) => MataMataProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ResultadosProvider()),
+        ChangeNotifierProvider(create: (_) => PalpitesProvider()),
       ],
       child: MaterialApp(
         title: 'Bolão Copa 2026',

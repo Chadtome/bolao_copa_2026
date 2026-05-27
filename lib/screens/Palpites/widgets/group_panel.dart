@@ -6,8 +6,10 @@ class GroupPanel extends StatelessWidget {
   final Map<String, dynamic> group;
   final Function(String, int, int)? onPalpiteChanged;
   final Map<String, Map<String, int>> palpites;
+  final bool showValidation;
+  final bool isBlocked;
 
-  const GroupPanel({super.key, required this.group, this.onPalpiteChanged, this.palpites = const {}});
+  const GroupPanel({super.key, required this.group, this.onPalpiteChanged, this.palpites = const {}, this.showValidation = false, this.isBlocked = false});
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +42,13 @@ class GroupPanel extends StatelessWidget {
               date: game['date'],
               time: game['time'],
               status: game['status'] ?? 'open',
-              isEditable: game['status'] == 'open',
+              isEditable: !isBlocked && game['status'] == 'open',
               gameId: gameId,
               homeBet: palpites[gameId]?['home'],
               awayBet: palpites[gameId]?['away'],
               homeScore: game['homeScore'],
               awayScore: game['awayScore'],
+              showError: showValidation && palpites[gameId] == null,
               onBetChanged: onPalpiteChanged,
             );
           })),

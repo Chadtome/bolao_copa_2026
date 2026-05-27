@@ -15,8 +15,9 @@ class MatchCard extends StatelessWidget {
   final String? time;
   final String status;
   final bool isEditable;
-  final String? gameId; // NOVO
-  final Function(String gameId, int home, int away)? onBetChanged; // ALTERADO
+  final String? gameId;
+  final bool showError;
+  final Function(String gameId, int home, int away)? onBetChanged;
 
   const MatchCard({
     super.key,
@@ -33,6 +34,7 @@ class MatchCard extends StatelessWidget {
     this.status = 'open',
     this.isEditable = false,
     this.gameId,
+    this.showError = false,
     this.onBetChanged,
   });
 
@@ -40,6 +42,9 @@ class MatchCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+      shape: showError
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Colors.red, width: 2))
+          : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
         child: Row(
@@ -75,6 +80,7 @@ class MatchCard extends StatelessWidget {
                 awayBet: awayBet,
                 status: status,
                 isEditable: isEditable,
+                showError: showError,
                 onChanged: (home, away) {
                   if (gameId != null && onBetChanged != null) {
                     onBetChanged!(gameId!, home, away);

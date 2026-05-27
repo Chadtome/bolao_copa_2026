@@ -1,4 +1,5 @@
 import 'package:bolao_copa_2026/providers/user_provider.dart';
+import 'package:bolao_copa_2026/screens/Admin/gerenciar_fases_screen.dart';
 import 'package:bolao_copa_2026/services/firebase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -71,6 +72,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 widget.onThemeToggle();
               } else if (value == 'admin') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminMataMataScreen()));
+              } else if (value == 'gerenciar_fases') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const GerenciarFasesScreen()));  
               } else if (value == 'sair') {
                 final confirmar = await showDialog<bool>(
                   context: context,
@@ -107,6 +110,17 @@ class _HomeScreenState extends State<HomeScreen> {
                   value: 'admin',
                   child: Row(children: [Icon(Icons.settings, size: 20), SizedBox(width: 8), Text('Configurar Mata-Mata')]),
                 ),
+              if (isAdmin)
+  const PopupMenuItem(
+    value: 'gerenciar_fases',
+    child: Row(
+      children: [
+        Icon(Icons.lock, size: 20),
+        SizedBox(width: 8),
+        Text('Gerenciar Fases'),
+      ],
+    ),
+  ),  
               const PopupMenuItem(
                 value: 'sair',
                 child: Row(children: [Icon(Icons.logout, size: 20), SizedBox(width: 8), Text('Sair')]),
@@ -115,7 +129,6 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      //body: _screens[_currentIndex],
       body: _screens[_currentIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,

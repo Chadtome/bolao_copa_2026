@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../data/teams.dart';
 import '../../../providers/resultados_provider.dart';
+import '../../../providers/user_provider.dart';
 import '../../../services/firebase_service.dart';
 
 class FaseColuna extends StatefulWidget {
@@ -70,33 +71,17 @@ class _FaseColunaState extends State<FaseColuna> {
     int slotVencedor;
     int slotPerdedor = 0;
 
-    if (slot <= 16) {
-      slotVencedor = 33 + ((slot - 1) ~/ 2);
-    } else if (slot <= 32) {
-      slotVencedor = 41 + ((slot - 17) ~/ 2);
-    } else if (slot <= 40) {
-      slotVencedor = 49 + ((slot - 33) ~/ 2);
-    } else if (slot <= 48) {
-      slotVencedor = 53 + ((slot - 41) ~/ 2);
-    } else if (slot <= 52) {
-      slotVencedor = 57 + ((slot - 49) ~/ 2);
-    } else if (slot <= 56) {
-      slotVencedor = 59 + ((slot - 53) ~/ 2);
-    } else if (slot == 57) {
-      slotVencedor = 63;
-      slotPerdedor = 62;
-    } else if (slot == 58) {
-      slotVencedor = 63;
-      slotPerdedor = 62;
-    } else if (slot == 59) {
-      slotVencedor = 64;
-      slotPerdedor = 61;
-    } else if (slot == 60) {
-      slotVencedor = 64;
-      slotPerdedor = 61;
-    } else {
-      return;
-    }
+    if (slot <= 16) { slotVencedor = 33 + ((slot - 1) ~/ 2); }
+    else if (slot <= 32) { slotVencedor = 41 + ((slot - 17) ~/ 2); }
+    else if (slot <= 40) { slotVencedor = 49 + ((slot - 33) ~/ 2); }
+    else if (slot <= 48) { slotVencedor = 53 + ((slot - 41) ~/ 2); }
+    else if (slot <= 52) { slotVencedor = 57 + ((slot - 49) ~/ 2); }
+    else if (slot <= 56) { slotVencedor = 59 + ((slot - 53) ~/ 2); }
+    else if (slot == 57) { slotVencedor = 63; slotPerdedor = 62; }
+    else if (slot == 58) { slotVencedor = 63; slotPerdedor = 62; }
+    else if (slot == 59) { slotVencedor = 64; slotPerdedor = 61; }
+    else if (slot == 60) { slotVencedor = 64; slotPerdedor = 61; }
+    else { return; }
 
     resultados.setAvancou(slotVencedor, vencedor);
     if (slotPerdedor > 0 && perdedor.isNotEmpty) {
@@ -135,31 +120,18 @@ class _FaseColunaState extends State<FaseColuna> {
     final slotA = widget.startSlot != null ? widget.startSlot! + index * 2 : null;
     final slotB = slotA != null ? slotA + 1 : null;
 
-    String timeA = '?';
-    String timeB = '?';
-    String flagA = '⚽';
-    String flagB = '⚽';
+    String timeA = '?', timeB = '?';
+    String flagA = '⚽', flagB = '⚽';
 
     if (widget.confrontos != null && index < widget.confrontos!.length) {
       final c = widget.confrontos![index];
-      if (c['timeA'] != null) {
-        timeA = c['timeA']!;
-        flagA = Teams.get(timeA).flag;
-      }
-      if (c['timeB'] != null) {
-        timeB = c['timeB']!;
-        flagB = Teams.get(timeB).flag;
-      }
+      if (c['timeA'] != null) { timeA = c['timeA']!; flagA = Teams.get(timeA).flag; }
+      if (c['timeB'] != null) { timeB = c['timeB']!; flagB = Teams.get(timeB).flag; }
     }
 
     return Container(
-      width: 180,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade300),
-      ),
+      width: 180, margin: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.surfaceContainerHighest, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade300)),
       child: IntrinsicHeight(
         child: Stack(
           children: [
@@ -176,9 +148,7 @@ class _FaseColunaState extends State<FaseColuna> {
   }
 
   Widget _buildTimes(BuildContext context, String timeA, String flagA, String timeB, String flagB, {required bool alinharEsquerda}) {
-    return Expanded(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [_timeRow(context, flagA, timeA, alinharEsquerda), _timeRow(context, flagB, timeB, alinharEsquerda)]),
-    );
+    return Expanded(child: Column(mainAxisSize: MainAxisSize.min, children: [_timeRow(context, flagA, timeA, alinharEsquerda), _timeRow(context, flagB, timeB, alinharEsquerda)]));
   }
 
   Widget _timeRow(BuildContext context, String flag, String name, bool alinharEsquerda) {
@@ -196,6 +166,9 @@ class _FaseColunaState extends State<FaseColuna> {
 
   Widget _buildCampos(BuildContext context, int cardIndex, int? slotA, int? slotB, ResultadosProvider resultados, String timeA, String timeB) {
     if (slotA == null || slotB == null) return const SizedBox(width: 30);
+
+    final userProvider = Provider.of<UserProvider>(context);
+    final isAdmin = userProvider.isAdmin;
 
     final homeController = _getHomeController(slotA);
     final awayController = _getAwayController(slotA);
@@ -247,11 +220,11 @@ class _FaseColunaState extends State<FaseColuna> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          SizedBox(height: 18, child: TextField(controller: homeController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => salvarResultado())),
-          if (empate) GestureDetector(onTap: () => passarComPenaltis(true), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+          SizedBox(height: 18, child: TextField(controller: homeController, readOnly: !isAdmin, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: isAdmin ? (_) => salvarResultado() : null)),
+          if (empate && isAdmin) GestureDetector(onTap: () => passarComPenaltis(true), child: const Text('⚽', style: TextStyle(fontSize: 10))),
           SizedBox(height: empate ? 8 : 14),
-          SizedBox(height: 18, child: TextField(controller: awayController, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: (_) => salvarResultado())),
-          if (empate) GestureDetector(onTap: () => passarComPenaltis(false), child: const Text('⚽', style: TextStyle(fontSize: 10))),
+          SizedBox(height: 18, child: TextField(controller: awayController, readOnly: !isAdmin, textAlign: TextAlign.center, keyboardType: TextInputType.number, maxLength: 2, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600), decoration: const InputDecoration(counterText: '', isDense: true, contentPadding: EdgeInsets.zero, border: InputBorder.none), onChanged: isAdmin ? (_) => salvarResultado() : null)),
+          if (empate && isAdmin) GestureDetector(onTap: () => passarComPenaltis(false), child: const Text('⚽', style: TextStyle(fontSize: 10))),
         ],
       ),
     );
