@@ -105,53 +105,57 @@ class _BetScreenState extends State<BetScreen> {
   }
 
   Future<void> _salvarPalpites(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Faça login primeiro!'), backgroundColor: Colors.red));
-      return;
-    }
-
-    if (_isBlocked) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Esta fase está bloqueada para palpites! 🔒'), backgroundColor: Colors.orange));
-      return;
-    }
-
-    final palpitesProvider = Provider.of<PalpitesProvider>(context, listen: false);
-    final palpites = palpitesProvider.palpites;
-
-    final totalJogos = _getTotalJogos();
-    final preenchidos = palpites.keys.where((k) {
-      if (_currentPhase == 0) return k.startsWith('grupo_');
-      if (_currentPhase == 1) return k.startsWith('16avos_');
-      if (_currentPhase == 2) return k.startsWith('oitavas_');
-      if (_currentPhase == 3) return k.startsWith('quartas_');
-      if (_currentPhase == 4) return k.startsWith('semi_');
-      if (_currentPhase == 5) return k == 'final' || k == 'terceiro';
-      return false;
-    }).length;
-
-    if (preenchidos < totalJogos) {
-      setState(() => _showValidation = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Preencha todos os palpites da fase! ($preenchidos de $totalJogos preenchidos)'), backgroundColor: Colors.red));
-      return;
-    }
-
-    setState(() => _showValidation = false);
-    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-    try {
-      for (var entry in palpites.entries) {
-        await firebaseService.saveBet(userId: user.uid, gameId: entry.key, homeBet: entry.value['home']!, awayBet: entry.value['away']!);
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Palpites salvos com sucesso! ✅'), backgroundColor: Colors.green));
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red));
-    }
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Faça login primeiro!'), backgroundColor: Colors.red));
+    return;
   }
+
+  if (_isBlocked) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Esta fase está bloqueada para palpites! 🔒'), backgroundColor: Colors.orange));
+    return;
+  }
+
+  final palpitesProvider = Provider.of<PalpitesProvider>(context, listen: false);
+  final palpites = palpitesProvider.palpites;
+
+  final totalJogos = _getTotalJogos();
+  final preenchidos = palpites.keys.where((k) {
+    if (_currentPhase == 0) return k.startsWith('grupo_');
+    if (_currentPhase == 1) return k.startsWith('16avos_');
+    if (_currentPhase == 2) return k.startsWith('oitavas_');
+    if (_currentPhase == 3) return k.startsWith('quartas_');
+    if (_currentPhase == 4) return k.startsWith('semi_');
+    if (_currentPhase == 5) return k == 'final' || k == 'terceiro';
+    return false;
+  }).length;
+
+  if (preenchidos < totalJogos) {
+    setState(() => _showValidation = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Preencha todos os palpites da fase! ($preenchidos de $totalJogos preenchidos)'), backgroundColor: Colors.red));
+    return;
+  }
+
+  setState(() => _showValidation = false);
+  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+  try {
+    for (var entry in palpites.entries) {
+      await firebaseService.saveBet(userId: user.uid, gameId: entry.key, homeBet: entry.value['home']!, awayBet: entry.value['away']!);
+    }
+    // Atualiza data do último palpite
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      'ultimoPalpite': FieldValue.serverTimestamp(),
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Palpites salvos com sucesso! ✅'), backgroundColor: Colors.green));
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red));
+  }
+}
 
   @override
   Widget build(BuildContext context) {
