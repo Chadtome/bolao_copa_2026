@@ -1,12 +1,12 @@
-import 'package:bolao_copa_2026/providers/palpites_provider.dart';
-import 'package:bolao_copa_2026/providers/resultados_provider.dart';
-import 'package:bolao_copa_2026/providers/user_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
 import 'providers/mata_mata_provider.dart';
+import 'providers/resultados_provider.dart';
+import 'providers/user_provider.dart';
+import 'providers/palpites_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/Home/home_screen.dart';
 
@@ -29,8 +29,14 @@ class _MyAppState extends State<MyApp> {
   bool _isDarkMode = false;
 
   void toggleTheme() {
-    setState(() {
-      _isDarkMode = !_isDarkMode;
+    setState(() => _isDarkMode = !_isDarkMode);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
     });
   }
 
@@ -40,8 +46,8 @@ class _MyAppState extends State<MyApp> {
       providers: [
         Provider<FirebaseService>(create: (_) => FirebaseService()),
         ChangeNotifierProvider(create: (_) => MataMataProvider()),
-        ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => ResultadosProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => PalpitesProvider()),
       ],
       child: MaterialApp(

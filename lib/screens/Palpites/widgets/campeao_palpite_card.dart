@@ -29,10 +29,7 @@ class _CampeaoPalpiteCardState extends State<CampeaoPalpiteCard> {
       final firebaseService = Provider.of<FirebaseService>(context, listen: false);
       final userData = await firebaseService.getCurrentUserData();
       if (userData != null && userData.campeaoPalpite != null && mounted) {
-        setState(() {
-          _selecionado = userData.campeaoPalpite;
-          _salvo = true;
-        });
+        setState(() { _selecionado = userData.campeaoPalpite; _salvo = true; });
       }
     } catch (_) {}
   }
@@ -44,13 +41,10 @@ class _CampeaoPalpiteCardState extends State<CampeaoPalpiteCard> {
 
     return Container(
       margin: const EdgeInsets.all(8),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade800, Colors.green.shade600, Colors.amber.shade700],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        gradient: LinearGradient(colors: [Colors.green.shade800, Colors.green.shade600, Colors.amber.shade700],
+            begin: Alignment.topLeft, end: Alignment.bottomRight),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [BoxShadow(color: Colors.green.withOpacity(0.4), blurRadius: 8, offset: const Offset(0, 4))],
       ),
@@ -59,75 +53,63 @@ class _CampeaoPalpiteCardState extends State<CampeaoPalpiteCard> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text('🏆', style: TextStyle(fontSize: 28)),
-              const SizedBox(width: 8),
-              Text('Escolha seu Campeão!',
-                  style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+              const Text('🏆', style: TextStyle(fontSize: 22)),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text('Escolha seu Campeão!',
+                    style: GoogleFonts.poppins(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+              ),
             ],
           ),
-          const SizedBox(height: 4),
-          Text('Vale 10 pontos no final', style: GoogleFonts.inter(fontSize: 12, color: Colors.white.withOpacity(0.8))),
-          const SizedBox(height: 12),
+          const SizedBox(height: 2),
+          Text('Vale 10 pontos no final', style: GoogleFonts.inter(fontSize: 10, color: Colors.white.withOpacity(0.8))),
+          const SizedBox(height: 8),
           DropdownButtonFormField<String>(
             value: _selecionado,
             isExpanded: true,
-            hint: const Text('Selecione uma seleção', style: TextStyle(color: Colors.white70)),
+            hint: const Text('Selecione uma seleção', style: TextStyle(color: Colors.white70, fontSize: 12)),
             dropdownColor: Colors.green.shade800,
-            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+            style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12),
             decoration: InputDecoration(
-              filled: true,
-              fillColor: Colors.white.withOpacity(0.2),
+              filled: true, fillColor: Colors.white.withOpacity(0.2),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-              prefixIcon: const Icon(Icons.flag, color: Colors.white),
+              prefixIcon: const Icon(Icons.flag, color: Colors.white, size: 18),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             ),
             items: Teams.all.entries.map((entry) {
               return DropdownMenuItem<String>(
                 value: entry.key,
-                child: Row(
-                  children: [
-                    Text(entry.value.flag, style: const TextStyle(fontSize: 18)),
-                    const SizedBox(width: 8),
-                    Flexible(child: Text(entry.key, style: const TextStyle(fontSize: 13, color: Colors.white))),
-                  ],
-                ),
+                child: Row(children: [Text(entry.value.flag, style: const TextStyle(fontSize: 14)), const SizedBox(width: 6),
+                  Flexible(child: Text(entry.key, style: const TextStyle(fontSize: 11, color: Colors.white)))]),
               );
             }).toList(),
-            onChanged: _salvo ? null : (value) {
-              setState(() => _selecionado = value);
-            },
+            onChanged: _salvo ? null : (value) => setState(() => _selecionado = value),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
           if (!_salvo)
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _selecionado != null
-                    ? () => _salvar(user.uid)
-                    : null,
-                icon: const Icon(Icons.check),
-                label: const Text('CONFIRMAR CAMPEÃO'),
+                onPressed: _selecionado != null ? () => _salvar(user.uid) : null,
+                icon: const Icon(Icons.check, size: 16),
+                label: const Text('CONFIRMAR', style: TextStyle(fontSize: 12)),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.green.shade800,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  backgroundColor: Colors.white, foregroundColor: Colors.green.shade800,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
               ),
             )
           else
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
+              width: double.infinity, padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(color: Colors.green.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.check_circle, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text('Campeão escolhido: $_selecionado',
-                      style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14)),
-                ],
-              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 16),
+                const SizedBox(width: 6),
+                Flexible(child: Text('Campeão: $_selecionado',
+                    style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 12))),
+              ]),
             ),
         ],
       ),
@@ -136,7 +118,6 @@ class _CampeaoPalpiteCardState extends State<CampeaoPalpiteCard> {
 
   Future<void> _salvar(String userId) async {
     if (_selecionado == null) return;
-
     final confirmar = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -144,28 +125,18 @@ class _CampeaoPalpiteCardState extends State<CampeaoPalpiteCard> {
         content: Text('Você está escolhendo "$_selecionado" como campeão.\n\nEsta escolha não poderá ser alterada depois!'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancelar')),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-            child: const Text('Confirmar', style: TextStyle(color: Colors.white)),
-          ),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), style: ElevatedButton.styleFrom(backgroundColor: Colors.green), child: const Text('Confirmar', style: TextStyle(color: Colors.white))),
         ],
       ),
     );
-
     if (confirmar != true) return;
-
     try {
       final firebaseService = Provider.of<FirebaseService>(context, listen: false);
       await firebaseService.salvarCampeaoPalpite(userId, _selecionado!);
       setState(() => _salvo = true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Campeão escolhido com sucesso! 🏆'), backgroundColor: Colors.green),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Campeão escolhido com sucesso! 🏆'), backgroundColor: Colors.green));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red));
     }
   }
 }

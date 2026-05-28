@@ -17,6 +17,8 @@ class GroupPhaseView extends StatelessWidget {
         final isWide = constraints.maxWidth > 600;
         if (isWide) {
           return ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.all(8),
             itemCount: (GroupPhaseGames.groups.length / 2).ceil(),
             itemBuilder: (context, index) {
@@ -39,6 +41,8 @@ class GroupPhaseView extends StatelessWidget {
           );
         }
         return ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
           padding: const EdgeInsets.all(8),
           itemCount: GroupPhaseGames.groups.length,
           itemBuilder: (context, index) => Padding(
