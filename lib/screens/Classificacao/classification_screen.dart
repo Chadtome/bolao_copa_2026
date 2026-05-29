@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../providers/resultados_provider.dart';
+import '../../providers/mata_mata_provider.dart';
 import 'widgets/group_phase_view.dart';
 import '../MataMata/mata_mata_screen.dart';
 
@@ -24,6 +25,7 @@ class _ClassificationScreenState extends State<ClassificationScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+      await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore();
       if (mounted) setState(() => _carregado = true);
     });
   }

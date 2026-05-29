@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
@@ -35,8 +36,9 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+      await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore();
     });
   }
 

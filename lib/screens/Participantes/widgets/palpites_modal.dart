@@ -63,6 +63,7 @@ class _PalpitesModalState extends State<PalpitesModal> {
   @override
   Widget build(BuildContext context) {
     final faseFechada = _isFaseFechada(_faseSelecionada);
+    final gruposFechada = _isFaseFechada('Grupo A');
 
     return AlertDialog(
       title: Text('Palpites de ${widget.nome}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
@@ -72,7 +73,7 @@ class _PalpitesModalState extends State<PalpitesModal> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              if (_campeaoEscolhido != null)
+              if (_campeaoEscolhido != null && gruposFechada)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
                   child: Container(
