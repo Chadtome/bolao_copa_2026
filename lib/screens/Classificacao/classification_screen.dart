@@ -18,13 +18,14 @@ class _ClassificationScreenState extends State<ClassificationScreen> {
   int _faseAtual = 0;
   final _titulos = ['FASE DE GRUPOS', 'MELHORES TERCEIROS', 'MATA-MATA'];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
-    });
-  }
+ @override
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+    if (mounted) setState(() {});
+  });
+}
 
   void _rodadaAnterior(int grupoIndex) {
     if (_rodadas[grupoIndex]! > 1) setState(() => _rodadas[grupoIndex] = _rodadas[grupoIndex]! - 1);
