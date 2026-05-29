@@ -16,16 +16,17 @@ class ClassificationScreen extends StatefulWidget {
 class _ClassificationScreenState extends State<ClassificationScreen> {
   Map<int, int> _rodadas = {for (int i = 0; i < 12; i++) i: 1};
   int _faseAtual = 0;
+  bool _carregado = false;
   final _titulos = ['FASE DE GRUPOS', 'MELHORES TERCEIROS', 'MATA-MATA'];
 
- @override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
-    if (mounted) setState(() {});
-  });
-}
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+      if (mounted) setState(() => _carregado = true);
+    });
+  }
 
   void _rodadaAnterior(int grupoIndex) {
     if (_rodadas[grupoIndex]! > 1) setState(() => _rodadas[grupoIndex] = _rodadas[grupoIndex]! - 1);
@@ -61,7 +62,12 @@ void initState() {
         ),
         Expanded(
           child: _faseAtual == 0
-              ? GroupPhaseView(rodadas: _rodadas, onRodadaAnterior: _rodadaAnterior, onProximaRodada: _proximaRodada)
+              ? GroupPhaseView(
+                  key: ValueKey(_carregado),
+                  rodadas: _rodadas,
+                  onRodadaAnterior: _rodadaAnterior,
+                  onProximaRodada: _proximaRodada,
+                )
               : _faseAtual == 1
                   ? const BestThirdsTable()
                   : const MataMataScreen(),
