@@ -91,27 +91,4 @@ class ResultadosProvider extends ChangeNotifier {
   }
 }
 
-  // Future<void> carregarDoFirestore() async {
-  //   try {
-  //     final snapshot = await FirebaseFirestore.instance.collection('resultados').get();
-  //     for (var doc in snapshot.docs) {
-  //       final data = doc.data();
-  //       if (doc.id.startsWith('slot_')) {
-  //         final key = doc.id.replaceAll('slot_', '');
-  //         _resultados[key] = Map<String, int>.from(data.map((k, v) => MapEntry(k, (v as num).toInt())));
-  //       } else if (doc.id == 'avancos') {
-  //         data.forEach((k, v) {
-  //           if (k.startsWith('slot_')) {
-  //             _avancos[int.parse(k.replaceAll('slot_', ''))] = v as String;
-  //           }
-  //         });
-  //       } else {
-  //         _resultadosGrupos[doc.id] = data.map((k, v) => MapEntry(k, v));
-  //       }
-  //     }
-  //     notifyListeners();
-  //   } catch (e) {
-  //     debugPrint('Erro ao carregar resultados: $e');
-  //   }
-  // }
 }
