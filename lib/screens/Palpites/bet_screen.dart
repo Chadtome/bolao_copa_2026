@@ -1,3 +1,4 @@
+import 'package:bolao_copa_2026/providers/mata_mata_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,13 +33,14 @@ class _BetScreenState extends State<BetScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _carregarPalpites();
-      _verificarBloqueio();
-    });
-  }
+void initState() {
+  super.initState();
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    _carregarPalpites();
+    _verificarBloqueio();
+    await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore(); // ADICIONE
+  });
+}
 
   Future<void> _carregarPalpites() async {
     final user = FirebaseAuth.instance.currentUser;
