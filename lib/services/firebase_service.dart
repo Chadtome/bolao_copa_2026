@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/game_model.dart';
 import '../models/bet_model.dart';
@@ -229,7 +230,6 @@ Future<List<Map<String, dynamic>>?> getUserBetsList(String userId) async {
   }
 }
 
-// Calcular pontos para um jogo específico
 Future<void> calculatePointsForGame(String gameId, int homeScore, int awayScore) async {
   QuerySnapshot betsSnapshot = await _firestore
       .collection('bets')
@@ -255,17 +255,11 @@ Future<void> calculatePointsForGame(String gameId, int homeScore, int awayScore)
       result = 'winner';
     }
 
-    // Pontos antigos (antes da edição)
-    final oldPoints = (data['points'] as num?)?.toInt() ?? 0;
-    final oldResult = data['result'] as String? ?? '';
-
-    // Atualiza o palpite com a nova pontuação
     await _firestore.collection('bets').doc(doc.id).update({
       'points': points,
       'result': result,
     });
 
-    // Atualiza pontuação do usuário
     DocumentReference userRef = _firestore.collection('users').doc(userId);
     DocumentSnapshot userDoc = await userRef.get();
 
@@ -274,20 +268,10 @@ Future<void> calculatePointsForGame(String gameId, int homeScore, int awayScore)
       int exactScores = (userDoc['exactScores'] as num?)?.toInt() ?? 0;
       int winners = (userDoc['winners'] as num?)?.toInt() ?? 0;
 
-      // Remove pontos antigos
-      currentPoints -= oldPoints;
-      if (oldResult == 'exact' && exactScores > 0) exactScores--;
-      if (oldResult == 'winner' && winners > 0) winners--;
-
-      // Adiciona novos pontos
-      currentPoints += points;
-      if (result == 'exact') exactScores++;
-      if (result == 'winner') winners++;
-
       await userRef.update({
-        'totalPoints': currentPoints,
-        'exactScores': exactScores,
-        'winners': winners,
+        'totalPoints': currentPoints + points,
+        'exactScores': result == 'exact' ? exactScores + 1 : exactScores,
+        'winners': result == 'winner' ? winners + 1 : winners,
       });
     }
   }
