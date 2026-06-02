@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import '../models/user_model.dart';
 import '../models/game_model.dart';
 import '../models/bet_model.dart';
@@ -295,6 +294,13 @@ Future<void> verificarCampeaoPalpite(String campeao) async {
     final currentPoints = (doc['totalPoints'] as num?)?.toInt() ?? 0;
     await doc.reference.update({'totalPoints': currentPoints + 10});
   }
+}
+
+// Atualizar nome do usuário
+Future<void> atualizarNomeUsuario(String userId, String novoNome) async {
+  await _firestore.collection('users').doc(userId).update({
+    'name': novoNome,
+  });
 }
 
 }

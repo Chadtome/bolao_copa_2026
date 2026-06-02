@@ -30,90 +30,94 @@ class _LoginFormState extends State<LoginForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        // Email
-        TextField(
-          controller: widget.emailController,
-          keyboardType: TextInputType.emailAddress,
-          decoration: InputDecoration(
-            labelText: 'Email',
-            prefixIcon: const Icon(Icons.email),
-            border: _borda(_emailVazio),
-            enabledBorder: _bordaEnabled(_emailVazio),
-          ),
-          onChanged: (_) => setState(() => _emailVazio = false),
-        ),
-        const SizedBox(height: 16),
-
-        // Senha
-        TextField(
-          controller: widget.senhaController,
-          obscureText: !_mostrarSenha,
-          decoration: InputDecoration(
-            labelText: 'Senha',
-            prefixIcon: const Icon(Icons.lock),
-            suffixIcon: IconButton(
-              icon: Icon(_mostrarSenha ? Icons.visibility : Icons.visibility_off),
-              onPressed: () => setState(() => _mostrarSenha = !_mostrarSenha),
+    return AutofillGroup(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Email
+          TextField(
+            controller: widget.emailController,
+            keyboardType: TextInputType.emailAddress,
+            autofillHints: const [AutofillHints.email],
+            decoration: InputDecoration(
+              labelText: 'Email',
+              prefixIcon: const Icon(Icons.email),
+              border: _borda(_emailVazio),
+              enabledBorder: _bordaEnabled(_emailVazio),
             ),
-            border: _borda(_senhaVazia),
-            enabledBorder: _bordaEnabled(_senhaVazia),
+            onChanged: (_) => setState(() => _emailVazio = false),
           ),
-          onChanged: (_) => setState(() => _senhaVazia = false),
-        ),
-        const SizedBox(height: 8),
+          const SizedBox(height: 16),
 
-        // Esqueceu senha
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: widget.onEsqueceuSenha,
-            child: Text('Esqueceu a senha?', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Botão Entrar
-        SizedBox(
-          width: double.infinity,
-          child: ElevatedButton(
-            onPressed: widget.isLoading
-                ? null
-                : () {
-                    setState(() {
-                      _emailVazio = widget.emailController.text.trim().isEmpty;
-                      _senhaVazia = widget.senhaController.text.trim().isEmpty;
-                    });
-                    widget.onLogin();
-                  },
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: widget.isLoading
-                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : Text('ENTRAR', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Alternar
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text('Não tem conta?', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
-            TextButton(
-              onPressed: widget.onAlternar,
-              child: Text(
-                'Cadastre-se',
-                style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+          // Senha
+          TextField(
+            controller: widget.senhaController,
+            obscureText: !_mostrarSenha,
+            autofillHints: const [AutofillHints.password],
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              prefixIcon: const Icon(Icons.lock),
+              suffixIcon: IconButton(
+                icon: Icon(_mostrarSenha ? Icons.visibility : Icons.visibility_off),
+                onPressed: () => setState(() => _mostrarSenha = !_mostrarSenha),
               ),
+              border: _borda(_senhaVazia),
+              enabledBorder: _bordaEnabled(_senhaVazia),
             ),
-          ],
-        ),
-      ],
+            onChanged: (_) => setState(() => _senhaVazia = false),
+          ),
+          const SizedBox(height: 8),
+
+          // Esqueceu senha
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: widget.onEsqueceuSenha,
+              child: Text('Esqueceu a senha?', style: GoogleFonts.inter(fontSize: 12, color: Colors.grey)),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Botão Entrar
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: widget.isLoading
+                  ? null
+                  : () {
+                      setState(() {
+                        _emailVazio = widget.emailController.text.trim().isEmpty;
+                        _senhaVazia = widget.senhaController.text.trim().isEmpty;
+                      });
+                      widget.onLogin();
+                    },
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: widget.isLoading
+                  ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  : Text('ENTRAR', style: GoogleFonts.poppins(fontSize: 16, fontWeight: FontWeight.w600)),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Alternar
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Não tem conta?', style: GoogleFonts.inter(fontSize: 13, color: Colors.grey)),
+              TextButton(
+                onPressed: widget.onAlternar,
+                child: Text(
+                  'Cadastre-se',
+                  style: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

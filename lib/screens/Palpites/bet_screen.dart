@@ -1,4 +1,5 @@
 import 'package:bolao_copa_2026/providers/mata_mata_provider.dart';
+import 'package:bolao_copa_2026/providers/resultados_provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -18,10 +19,13 @@ class BetScreen extends StatefulWidget {
 }
 
 class _BetScreenState extends State<BetScreen> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
   int _currentPhase = 0;
   bool _isLoading = true;
   bool _showValidation = false;
   bool _isBlocked = false;
+  bool _mataMataCarregado = false;
 
   final List<Map<String, dynamic>> _phases = [
     {'title': 'Fase de Grupos', 'icon': Icons.groups},
@@ -33,25 +37,36 @@ class _BetScreenState extends State<BetScreen> {
   ];
 
   @override
-void initState() {
-  super.initState();
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    _carregarPalpites();
-    _verificarBloqueio();
-    await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore(); // ADICIONE
-  });
-}
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _carregarPalpites();
+      await _verificarBloqueio();
+      
+      // Carrega os dados do mata-mata
+      await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore();
+      await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
+      
+      if (mounted) setState(() => _mataMataCarregado = true);
+    });
+  }
 
   Future<void> _carregarPalpites() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) { setState(() => _isLoading = false); return; }
+    if (user == null) { 
+      setState(() => _isLoading = false); 
+      return; 
+    }
     try {
       final firebaseService = Provider.of<FirebaseService>(context, listen: false);
       final bets = await firebaseService.getUserBetsList(user.uid);
       final palpitesProvider = Provider.of<PalpitesProvider>(context, listen: false);
       if (bets != null) palpitesProvider.carregarDoFirebase(bets);
-    } catch (e) { debugPrint('Erro ao carregar palpites: $e'); }
-    finally { setState(() => _isLoading = false); }
+    } catch (e) { 
+      debugPrint('Erro ao carregar palpites: $e'); 
+    } finally { 
+      if (mounted) setState(() => _isLoading = false); 
+    }
   }
 
   Future<void> _verificarBloqueio() async {
@@ -60,7 +75,10 @@ void initState() {
   }
 
   void _mudarFase(int novaFase) {
-    setState(() { _currentPhase = novaFase; _showValidation = false; });
+    setState(() { 
+      _currentPhase = novaFase; 
+      _showValidation = false; 
+    });
     _verificarBloqueio();
   }
 
@@ -108,6 +126,7 @@ void initState() {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Esta fase está bloqueada para palpites! 🔒'), backgroundColor: Colors.orange));
       return;
     }
+    
     final palpitesProvider = Provider.of<PalpitesProvider>(context, listen: false);
     final palpites = palpitesProvider.palpites;
     final totalJogos = _getTotalJogos();
@@ -120,18 +139,60 @@ void initState() {
       if (_currentPhase == 5) return k == 'final' || k == 'terceiro';
       return false;
     }).length;
+    
     if (preenchidos < totalJogos) {
       setState(() => _showValidation = true);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Preencha todos os palpites da fase! ($preenchidos de $totalJogos preenchidos)'), backgroundColor: Colors.red));
       return;
     }
+    
     setState(() => _showValidation = false);
-    final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    
+    // Mostra loading enquanto salva
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Salvando palpites... ⏳'), duration: Duration(seconds: 1)));
+    
     try {
+      final batch = _firestore.batch();
+      
+      // Para cada palpite, verifica se já existe e adiciona ao batch
       for (var entry in palpites.entries) {
-        await firebaseService.saveBet(userId: user.uid, gameId: entry.key, homeBet: entry.value['home']!, awayBet: entry.value['away']!);
+        final gameId = entry.key;
+        final homeBet = entry.value['home']!;
+        final awayBet = entry.value['away']!;
+        
+        // Verifica se já existe palpite para este jogo
+        final existing = await _firestore
+            .collection('bets')
+            .where('userId', isEqualTo: user.uid)
+            .where('gameId', isEqualTo: gameId)
+            .get();
+        
+        if (existing.docs.isNotEmpty) {
+          // Atualiza palpite existente
+          batch.update(existing.docs.first.reference, {
+            'homeBet': homeBet,
+            'awayBet': awayBet,
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        } else {
+          // Cria novo palpite
+          batch.set(_firestore.collection('bets').doc(), {
+            'userId': user.uid,
+            'gameId': gameId,
+            'homeBet': homeBet,
+            'awayBet': awayBet,
+            'points': 0,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
       }
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update({'ultimoPalpite': FieldValue.serverTimestamp()});
+      
+      // Executa todas as operações de uma vez
+      await batch.commit();
+      
+      // Atualiza timestamp do último palpite
+      await _firestore.collection('users').doc(user.uid).update({'ultimoPalpite': FieldValue.serverTimestamp()});
+      
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Palpites salvos com sucesso! ✅'), backgroundColor: Colors.green));
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Erro ao salvar: $e'), backgroundColor: Colors.red));
@@ -143,6 +204,11 @@ void initState() {
     final palpitesProvider = Provider.of<PalpitesProvider>(context);
     final palpites = palpitesProvider.palpites;
 
+    // Mostra loading enquanto os dados do mata-mata não carregaram
+    if (_currentPhase != 0 && !_mataMataCarregado) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     return Column(
       children: [
         Padding(
@@ -150,16 +216,35 @@ void initState() {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              IconButton(icon: const Icon(Icons.chevron_left), onPressed: _currentPhase > 0 ? () => _mudarFase(_currentPhase - 1) : null),
-              Text(_phases[_currentPhase]['title'], style: GoogleFonts.poppins(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
-              IconButton(icon: const Icon(Icons.chevron_right), onPressed: _currentPhase < _phases.length - 1 ? () => _mudarFase(_currentPhase + 1) : null),
+              IconButton(
+                icon: const Icon(Icons.chevron_left), 
+                onPressed: _currentPhase > 0 ? () => _mudarFase(_currentPhase - 1) : null
+              ),
+              Text(
+                _phases[_currentPhase]['title'], 
+                style: GoogleFonts.poppins(
+                  fontSize: 18, 
+                  fontWeight: FontWeight.w600, 
+                  color: Theme.of(context).colorScheme.primary
+                )
+              ),
+              IconButton(
+                icon: const Icon(Icons.chevron_right), 
+                onPressed: _currentPhase < _phases.length - 1 ? () => _mudarFase(_currentPhase + 1) : null
+              ),
             ],
           ),
         ),
         if (_isBlocked)
           Container(
-            width: double.infinity, padding: const EdgeInsets.symmetric(vertical: 6), color: Colors.red.withOpacity(0.1),
-            child: const Text('🔒 Esta fase está bloqueada para palpites', textAlign: TextAlign.center, style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600)),
+            width: double.infinity, 
+            padding: const EdgeInsets.symmetric(vertical: 6), 
+            color: Colors.red.withOpacity(0.1),
+            child: const Text(
+              '🔒 Esta fase está bloqueada para palpites', 
+              textAlign: TextAlign.center, 
+              style: TextStyle(color: Colors.red, fontSize: 12, fontWeight: FontWeight.w600)
+            ),
           ),
         Expanded(
           child: _isLoading
@@ -167,15 +252,33 @@ void initState() {
               : _currentPhase == 0
                   ? ListView(
                       children: [
-                        GroupPhaseView(onPalpiteChanged: _onPalpiteChanged, palpites: palpites, showValidation: _showValidation, isBlocked: _isBlocked),
+                        GroupPhaseView(
+                          onPalpiteChanged: _onPalpiteChanged, 
+                          palpites: palpites, 
+                          showValidation: _showValidation, 
+                          isBlocked: _isBlocked
+                        ),
                         const CampeaoPalpiteCard(),
                       ],
                     )
-                  : KnockoutPhaseView(currentPhase: _currentPhase, onPalpiteChanged: _onPalpiteChanged, palpites: palpites, showValidation: _showValidation, isBlocked: _isBlocked),
+                  : KnockoutPhaseView(
+                      currentPhase: _currentPhase, 
+                      onPalpiteChanged: _onPalpiteChanged, 
+                      palpites: palpites, 
+                      showValidation: _showValidation, 
+                      isBlocked: _isBlocked
+                    ),
         ),
         Padding(
           padding: const EdgeInsets.all(16),
-          child: SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () => _salvarPalpites(context), icon: const Icon(Icons.save), label: const Text('SALVAR TODOS OS PALPITES'))),
+          child: SizedBox(
+            width: double.infinity, 
+            child: ElevatedButton.icon(
+              onPressed: () => _salvarPalpites(context), 
+              icon: const Icon(Icons.save), 
+              label: const Text('SALVAR TODOS OS PALPITES')
+            )
+          ),
         ),
       ],
     );

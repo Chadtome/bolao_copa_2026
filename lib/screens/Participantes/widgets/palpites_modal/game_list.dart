@@ -18,21 +18,36 @@ class GameList extends StatelessWidget {
       final prefixo = 'grupo_${fase.replaceAll('Grupo ', '')}_';
       palpitesFase = palpites.where((p) => p['gameId'].startsWith(prefixo)).toList();
       _ordenar(palpitesFase);
-    } else if (fase == '16 avos') { palpitesFase = palpites.where((p) => p['gameId'].startsWith('16avos_')).toList(); _ordenar(palpitesFase); }
-    else if (fase == 'Oitavas') { palpitesFase = palpites.where((p) => p['gameId'].startsWith('oitavas_')).toList(); _ordenar(palpitesFase); }
-    else if (fase == 'Quartas') { palpitesFase = palpites.where((p) => p['gameId'].startsWith('quartas_')).toList(); _ordenar(palpitesFase); }
-    else if (fase == 'Semi') { palpitesFase = palpites.where((p) => p['gameId'].startsWith('semi_')).toList(); _ordenar(palpitesFase); }
-    else if (fase == 'Final') { palpitesFase = palpites.where((p) => p['gameId'] == 'final' || p['gameId'] == 'terceiro').toList(); }
-    else { palpitesFase = []; }
+    } else if (fase == '16 avos') { 
+      palpitesFase = palpites.where((p) => p['gameId'].startsWith('16avos_')).toList(); 
+      _ordenar(palpitesFase); 
+    } else if (fase == 'Oitavas') { 
+      palpitesFase = palpites.where((p) => p['gameId'].startsWith('oitavas_')).toList(); 
+      _ordenar(palpitesFase); 
+    } else if (fase == 'Quartas') { 
+      palpitesFase = palpites.where((p) => p['gameId'].startsWith('quartas_')).toList(); 
+      _ordenar(palpitesFase); 
+    } else if (fase == 'Semi') { 
+      palpitesFase = palpites.where((p) => p['gameId'].startsWith('semi_')).toList(); 
+      _ordenar(palpitesFase); 
+    } else if (fase == 'Final') { 
+      palpitesFase = palpites.where((p) => p['gameId'] == 'final' || p['gameId'] == 'terceiro').toList(); 
+    } else { 
+      palpitesFase = []; 
+    }
 
     if (palpitesFase.isEmpty) {
-      return const Padding(padding: EdgeInsets.all(16), child: Text('Nenhum palpite encontrado.', style: TextStyle(color: Colors.grey)));
+      return const Padding(
+        padding: EdgeInsets.all(16), 
+        child: Text('Nenhum palpite encontrado.', style: TextStyle(color: Colors.grey))
+      );
     }
 
     return Column(
       children: palpitesFase.map((p) {
         final gameId = p['gameId'] as String;
-        final homeBet = p['homeBet'] as int, awayBet = p['awayBet'] as int;
+        final homeBet = p['homeBet'] as int;
+        final awayBet = p['awayBet'] as int;
         final nomes = _getNomes(gameId, context);
 
         return Card(
@@ -45,8 +60,14 @@ class GameList extends StatelessWidget {
               children: [
                 ResultadoIcon(gameId: gameId, homeBet: homeBet, awayBet: awayBet),
                 const SizedBox(width: 4),
-                Text('$homeBet x $awayBet',
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.primary)),
+                Text(
+                  '$homeBet x $awayBet',
+                  style: TextStyle(
+                    fontSize: 14, 
+                    fontWeight: FontWeight.w600, 
+                    color: Theme.of(context).colorScheme.primary
+                  )
+                ),
               ],
             ),
           ),
@@ -56,13 +77,15 @@ class GameList extends StatelessWidget {
   }
 
   String? _timeDoSlot(int slot, BuildContext context) {
-    final mataMata = Provider.of<MataMataProvider>(context, listen: false);
-    final resultados = Provider.of<ResultadosProvider>(context, listen: false);
+    // Usando listen: true para garantir que atualiza se os dados mudarem
+    final mataMata = Provider.of<MataMataProvider>(context, listen: true);
+    final resultados = Provider.of<ResultadosProvider>(context, listen: true);
     return mataMata.slots[slot] ?? resultados.getTime(slot);
   }
 
   List<String> _getNomes(String gameId, BuildContext context) {
-    String homeTeam = 'Time A', awayTeam = 'Time B';
+    String homeTeam = 'Time A';
+    String awayTeam = 'Time B';
 
     if (gameId.startsWith('grupo_')) {
       final partes = gameId.split('_');
@@ -71,18 +94,36 @@ class GameList extends StatelessWidget {
         if (grupoIndex >= 0) {
           final games = GroupPhaseGames.groups[grupoIndex]['games'] as List;
           final idx = int.tryParse(partes[2]) ?? 0;
-          if (idx < games.length) { homeTeam = games[idx]['homeTeam'] ?? 'Time A'; awayTeam = games[idx]['awayTeam'] ?? 'Time B'; }
+          if (idx < games.length) { 
+            homeTeam = games[idx]['homeTeam'] ?? 'Time A'; 
+            awayTeam = games[idx]['awayTeam'] ?? 'Time B'; 
+          }
         }
       }
     } else {
       int? sA;
-      if (gameId.startsWith('16avos_')) { final n = int.tryParse(gameId.replaceAll('16avos_', '')) ?? 0; sA = n <= 8 ? 1 + (n-1)*2 : 17 + (n-9)*2; }
-      else if (gameId.startsWith('oitavas_')) { final n = int.tryParse(gameId.replaceAll('oitavas_', '')) ?? 0; sA = (n <= 4 ? 33 : 41) + ((n <= 4 ? n-1 : n-5)*2); }
-      else if (gameId.startsWith('quartas_')) { final n = int.tryParse(gameId.replaceAll('quartas_', '')) ?? 0; sA = (n <= 2 ? 49 : 53) + ((n <= 2 ? n-1 : n-3)*2); }
-      else if (gameId.startsWith('semi_')) { final n = int.tryParse(gameId.replaceAll('semi_', '')) ?? 0; sA = n == 1 ? 57 : 59; }
-      else if (gameId == 'final') sA = 63;
-      else if (gameId == 'terceiro') sA = 61;
-      if (sA != null) { homeTeam = _timeDoSlot(sA, context) ?? 'Time A'; awayTeam = _timeDoSlot(sA + 1, context) ?? 'Time B'; }
+      if (gameId.startsWith('16avos_')) { 
+        final n = int.tryParse(gameId.replaceAll('16avos_', '')) ?? 0; 
+        sA = n <= 8 ? 1 + (n-1)*2 : 17 + (n-9)*2; 
+      } else if (gameId.startsWith('oitavas_')) { 
+        final n = int.tryParse(gameId.replaceAll('oitavas_', '')) ?? 0; 
+        sA = (n <= 4 ? 33 : 41) + ((n <= 4 ? n-1 : n-5)*2); 
+      } else if (gameId.startsWith('quartas_')) { 
+        final n = int.tryParse(gameId.replaceAll('quartas_', '')) ?? 0; 
+        sA = (n <= 2 ? 49 : 53) + ((n <= 2 ? n-1 : n-3)*2); 
+      } else if (gameId.startsWith('semi_')) { 
+        final n = int.tryParse(gameId.replaceAll('semi_', '')) ?? 0; 
+        sA = n == 1 ? 57 : 59; 
+      } else if (gameId == 'final') {
+        sA = 63;
+      } else if (gameId == 'terceiro') {
+        sA = 61;
+      }
+      
+      if (sA != null) { 
+        homeTeam = _timeDoSlot(sA, context) ?? 'Time A'; 
+        awayTeam = _timeDoSlot(sA + 1, context) ?? 'Time B'; 
+      }
     }
     return [homeTeam, awayTeam];
   }

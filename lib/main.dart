@@ -1,6 +1,6 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'services/firebase_service.dart';
@@ -15,6 +15,8 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp(options: firebaseOptions);
+
+  await FirebaseAuth.instance.setPersistence(Persistence.LOCAL);
 
   runApp(const MyApp());
 }
@@ -33,13 +35,11 @@ class _MyAppState extends State<MyApp> {
     setState(() => _isDarkMode = !_isDarkMode);
   }
 
+  // 👈 REMOVA TUDO QUE ESTÁ DENTRO DO initState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore();
-      await Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore();
-    });
+    // NÃO FAZ NADA AQUI - Deixe vazio ou remova o método
   }
 
   @override

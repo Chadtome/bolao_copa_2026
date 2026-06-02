@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../../../../services/firebase_service.dart';
+import '../../../../providers/mata_mata_provider.dart';
+import '../../../../providers/resultados_provider.dart';
 import 'palpites_modal/game_list.dart';
 
 class PalpitesModal extends StatefulWidget {
@@ -19,6 +21,7 @@ class _PalpitesModalState extends State<PalpitesModal> {
   String _faseSelecionada = 'Grupo A';
   List<Map<String, dynamic>> _palpites = [];
   bool _isLoading = true;
+  bool _isLoadingProviders = true; // 👈 NOVO
   String? _campeaoEscolhido;
   Map<String, bool> _fasesStatus = {};
 
@@ -30,6 +33,16 @@ class _PalpitesModalState extends State<PalpitesModal> {
 
   Future<void> _carregar() async {
     final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+    
+    // Carrega os providers necessários para os nomes dos times
+    await Future.wait([
+      Provider.of<MataMataProvider>(context, listen: false).carregarDoFirestore(),
+      Provider.of<ResultadosProvider>(context, listen: false).carregarDoFirestore(),
+    ]);
+    
+    if (mounted) setState(() => _isLoadingProviders = false);
+    
+    // Carrega os palpites do usuário
     final bets = await firebaseService.getUserBetsList(widget.userId);
     if (bets != null) _palpites = bets;
 
@@ -64,6 +77,19 @@ class _PalpitesModalState extends State<PalpitesModal> {
   Widget build(BuildContext context) {
     final faseFechada = _isFaseFechada(_faseSelecionada);
     final gruposFechada = _isFaseFechada('Grupo A');
+
+    // 👈 MOSTRA LOADING ENQUANTO PROVIDERS NÃO CARREGAM
+    if (_isLoadingProviders) {
+      return AlertDialog(
+        title: Text('Palpites de ${widget.nome}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+        content: const SizedBox(
+          width: 400,
+          height: 200,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('FECHAR'))],
+      );
+    }
 
     return AlertDialog(
       title: Text('Palpites de ${widget.nome}', style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),

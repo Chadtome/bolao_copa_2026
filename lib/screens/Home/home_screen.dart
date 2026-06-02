@@ -24,7 +24,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
-  bool _isLoggedIn = false;
 
   final List<Widget> _screens = [
     const HomeContent(),
@@ -34,9 +33,82 @@ class _HomeScreenState extends State<HomeScreen> {
     const RankingScreen(),
   ];
 
+  Future<void> _editarNome(BuildContext context) async {
+  final userProvider = Provider.of<UserProvider>(context, listen: false);
+  final nomeAtual = userProvider.user?.name ?? '';
+  final TextEditingController nomeController = TextEditingController(text: nomeAtual);
+  
+  final result = await showDialog<String>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text('Editar Nome'),
+      content: TextField(
+        controller: nomeController,
+        decoration: const InputDecoration(
+          labelText: 'Novo nome',
+          hintText: 'Digite seu nome',
+          border: OutlineInputBorder(),
+        ),
+        autofocus: true,
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, nomeController.text.trim()),
+          child: const Text('Salvar'),
+        ),
+      ],
+    ),
+  );
+  
+  if (result != null && result.isNotEmpty && result != nomeAtual) {
+    try {
+      final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+      final user = firebaseService.currentUser;
+      
+      if (user != null) {
+        // Atualiza no Firestore
+        await firebaseService.atualizarNomeUsuario(user.uid, result);
+        
+        // Recarrega os dados do usuário do Firestore
+        final userModelAtualizado = await firebaseService.getCurrentUserData();
+        userProvider.setUser(userModelAtualizado);
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Nome alterado com sucesso! ✅'), backgroundColor: Colors.green),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao alterar nome: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+}
+
   @override
   Widget build(BuildContext context) {
-    if (!_isLoggedIn) {
+    final userProvider = Provider.of<UserProvider>(context);
+    final isLoggedIn = userProvider.user != null;
+    final isLoading = userProvider.isLoading;
+    final isAdmin = userProvider.isAdmin;
+
+    // Mostra loading enquanto verifica o login
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // Se não está logado, mostra tela de login
+    if (!isLoggedIn) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Bolão Copa 2026'),
@@ -49,19 +121,15 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         body: LoginScreen(
-          onLoginSuccess: () => setState(() {
-            _isLoggedIn = true;
-            _currentIndex = 0;
-            _screens[1] = BetScreen();
-  
-          }),
+          onLoginSuccess: () {
+            // Força rebuild da tela - o UserProvider já detecta o login sozinho
+            setState(() {});
+          },
         ),
       );
     }
 
-    final userProvider = Provider.of<UserProvider>(context);
-    final isAdmin = userProvider.isAdmin;
-
+    // Usuário logado - mostra tela principal
     return Scaffold(
       appBar: AppBar(
         title: const Text('Bolão Copa 2026'),
@@ -71,6 +139,8 @@ class _HomeScreenState extends State<HomeScreen> {
             onSelected: (value) async {
               if (value == 'tema') {
                 widget.onThemeToggle();
+              } else if (value == 'editar_nome') {
+                await _editarNome(context);
               } else if (value == 'admin') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminMataMataScreen()));
               } else if (value == 'gerenciar_fases') {
@@ -88,16 +158,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 );
                 if (confirmar == true) {
-  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
-  await firebaseService.logout();
-  Provider.of<UserProvider>(context, listen: false).clear();
-  Provider.of<PalpitesProvider>(context, listen: false).limpar(); // NOVO
-  setState(() => _isLoggedIn = false);
-}
-
+                  final firebaseService = Provider.of<FirebaseService>(context, listen: false);
+                  await firebaseService.logout();
+                  Provider.of<UserProvider>(context, listen: false).clear();
+                  Provider.of<PalpitesProvider>(context, listen: false).limpar();
+                  setState(() {});
+                }
               }
             },
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'editar_nome',
+                child: Row(
+                  children: [
+                    Icon(Icons.person, size: 20),
+                    SizedBox(width: 8),
+                    Text('Editar Nome'),
+                  ],
+                ),
+              ),
               PopupMenuItem(
                 value: 'tema',
                 child: Row(
@@ -114,16 +193,16 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Row(children: [Icon(Icons.settings, size: 20), SizedBox(width: 8), Text('Configurar Mata-Mata')]),
                 ),
               if (isAdmin)
-  const PopupMenuItem(
-    value: 'gerenciar_fases',
-    child: Row(
-      children: [
-        Icon(Icons.lock, size: 20),
-        SizedBox(width: 8),
-        Text('Gerenciar Fases'),
-      ],
-    ),
-  ),  
+                const PopupMenuItem(
+                  value: 'gerenciar_fases',
+                  child: Row(
+                    children: [
+                      Icon(Icons.lock, size: 20),
+                      SizedBox(width: 8),
+                      Text('Gerenciar Fases'),
+                    ],
+                  ),
+                ),  
               const PopupMenuItem(
                 value: 'sair',
                 child: Row(children: [Icon(Icons.logout, size: 20), SizedBox(width: 8), Text('Sair')]),
